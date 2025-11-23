@@ -1,15 +1,15 @@
-# Ejemplo simple de listas en Jade
+// Ejemplo simple de listas en Jade
 
 funcion main()
-    # Crear una lista
+    // Crear una lista
     variable numeros = [1, 2, 3, 4, 5]
     
-    # Mostrar elementos
+    // Mostrar elementos
     mostrar("Lista creada")
     mostrar("Primer elemento: " + convertir_a_texto(numeros[0]))
     mostrar("Segundo elemento: " + convertir_a_texto(numeros[1]))
     
-    # Modificar elemento
+    // Modificar elemento
     numeros[0] = 10
     mostrar("Modificado primer elemento: " + convertir_a_texto(numeros[0]))
 fin
