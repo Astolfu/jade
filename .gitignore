@@ -1,0 +1,54 @@
+# Archivos compilados
+*.o
+*.exe
+*.ll
+*.bc
+*.so
+*.dll
+*.dylib
+
+# Directorios de build
+build/
+dist/
+*.egg-info/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs y temporales
+*.log
+tmp/
+temp/
+.cache/
+
+# Específicos de Jade
+examples/*.o
+examples/*.exe
+examples/*.ll
+std/*.o
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Sistema
+Thumbs.db
+desktop.ini

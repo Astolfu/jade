@@ -1,0 +1,287 @@
+"""
+Intérprete simple de Jade
+Ejecuta programas Jade directamente sin compilar
+"""
+
+import sys
+from lexer import tokenizar_codigo
+from parser import parsear_codigo
+from semantic_analyzer import AnalizadorSemantico
+from ast_nodes import *
+from type_system import *
+
+
+class InterpreteJade:
+    """Intérprete que ejecuta código Jade directamente"""
+    
+    def __init__(self):
+        self.variables = {}  # Scope global
+        self.funciones = {}  # Funciones definidas
+        self.valor_retorno = None
+        self.debe_retornar = False
+    
+    def ejecutar_programa(self, programa: Programa):
+        """Ejecuta un programa Jade"""
+        # Registrar todas las funciones primero
+        for decl in programa.declaraciones:
+            if isinstance(decl, DeclaracionFuncion):
+                self.funciones[decl.nombre] = decl
+        
+        # Ejecutar función main
+        if 'main' in self.funciones:
+            self.ejecutar_funcion('main', [])
+        else:
+            print("Error: No se encontró función 'main'")
+    
+    def ejecutar_funcion(self, nombre: str, argumentos: list):
+        """Ejecuta una función"""
+        if nombre not in self.funciones:
+            raise NameError(f"Función '{nombre}' no definida")
+        
+        func = self.funciones[nombre]
+        
+        # Crear scope local
+        scope_anterior = self.variables.copy()
+        
+        # Asignar parámetros
+        for i, (param_nombre, _) in enumerate(func.parametros):
+            if i < len(argumentos):
+                self.variables[param_nombre] = argumentos[i]
+        
+        # Ejecutar cuerpo
+        self.debe_retornar = False
+        for stmt in func.cuerpo:
+            self.ejecutar_statement(stmt)
+            if self.debe_retornar:
+                break
+        
+        # Restaurar scope
+        resultado = self.valor_retorno
+        self.valor_retorno = None
+        self.debe_retornar = False
+        self.variables = scope_anterior
+        
+        return resultado
+    
+    def ejecutar_statement(self, stmt: Statement):
+        """Ejecuta un statement"""
+        if isinstance(stmt, DeclaracionVariable):
+            valor = self.evaluar_expresion(stmt.valor_inicial)
+            self.variables[stmt.nombre] = valor
+        
+        elif isinstance(stmt, Asignacion):
+            valor = self.evaluar_expresion(stmt.valor)
+            self.variables[stmt.nombre] = valor
+        
+        elif isinstance(stmt, Si):
+            condicion = self.evaluar_expresion(stmt.condicion)
+            if condicion:
+                for s in stmt.bloque_entonces:
+                    self.ejecutar_statement(s)
+                    if self.debe_retornar:
+                        return
+            elif stmt.bloque_sino:
+                for s in stmt.bloque_sino:
+                    self.ejecutar_statement(s)
+                    if self.debe_retornar:
+                        return
+        
+        elif isinstance(stmt, Mientras):
+            while self.evaluar_expresion(stmt.condicion):
+                for s in stmt.cuerpo:
+                    self.ejecutar_statement(s)
+                    if self.debe_retornar:
+                        return
+        
+        elif isinstance(stmt, Para):
+            inicio = self.evaluar_expresion(stmt.inicio)
+            fin = self.evaluar_expresion(stmt.fin)
+            
+            for i in range(inicio, fin):
+                self.variables[stmt.variable] = i
+                for s in stmt.cuerpo:
+                    self.ejecutar_statement(s)
+                    if self.debe_retornar:
+                        return
+        
+        elif isinstance(stmt, Retornar):
+            if stmt.valor:
+                self.valor_retorno = self.evaluar_expresion(stmt.valor)
+            self.debe_retornar = True
+        
+        elif isinstance(stmt, ExpresionStatement):
+            self.evaluar_expresion(stmt.expresion)
+    
+    def evaluar_expresion(self, expr: Expresion):
+        """Evalúa una expresión"""
+        if isinstance(expr, LiteralEntero):
+            return expr.valor
+        
+        elif isinstance(expr, LiteralFlotante):
+            return expr.valor
+        
+        elif isinstance(expr, LiteralTexto):
+            return expr.valor
+        
+        elif isinstance(expr, LiteralBooleano):
+            return expr.valor
+        
+        elif isinstance(expr, LiteralNulo):
+            return None
+        
+        elif isinstance(expr, Identificador):
+            if expr.nombre in self.variables:
+                return self.variables[expr.nombre]
+            raise NameError(f"Variable '{expr.nombre}' no definida")
+        
+        elif isinstance(expr, ExpresionBinaria):
+            izq = self.evaluar_expresion(expr.izquierda)
+            der = self.evaluar_expresion(expr.derecha)
+            op = expr.operador.valor
+            
+            if op == '+':
+                return izq + der
+            elif op == '-':
+                return izq - der
+            elif op == '*':
+                return izq * der
+            elif op == '/':
+                return izq // der if isinstance(izq, int) else izq / der
+            elif op == '%':
+                return izq % der
+            elif op == '^':
+                return izq ** der
+            elif op == '==':
+                return izq == der
+            elif op == '!=':
+                return izq != der
+            elif op == '<':
+                return izq < der
+            elif op == '>':
+                return izq > der
+            elif op == '<=':
+                return izq <= der
+            elif op == '>=':
+                return izq >= der
+            elif op == 'y':
+                return izq and der
+            elif op == 'o':
+                return izq or der
+        
+        elif isinstance(expr, ExpresionUnaria):
+            val = self.evaluar_expresion(expr.expresion)
+            if expr.operador.tipo == TokenType.MENOS:
+                return -val
+            elif expr.operador.tipo == TokenType.NO:
+                return not val
+        
+        elif isinstance(expr, LlamadaFuncion):
+            return self.ejecutar_llamada(expr)
+        
+        elif isinstance(expr, LiteralLista):
+            return [self.evaluar_expresion(elem) for elem in expr.elementos]
+        
+        elif isinstance(expr, AccesoIndice):
+            objeto = self.evaluar_expresion(expr.objeto)
+            indice = self.evaluar_expresion(expr.indice)
+            return objeto[indice]
+        
+        return None
+    
+    def ejecutar_llamada(self, llamada: LlamadaFuncion):
+        """Ejecuta llamada a función"""
+        # Funciones built-in
+        if llamada.nombre == 'mostrar':
+            arg = self.evaluar_expresion(llamada.argumentos[0])
+            print(arg)
+            return None
+        
+        elif llamada.nombre == 'leer':
+            return input()
+        
+        elif llamada.nombre == 'convertir_a_texto':
+            arg = self.evaluar_expresion(llamada.argumentos[0])
+            return str(arg)
+        
+        elif llamada.nombre == 'convertir_a_entero':
+            arg = self.evaluar_expresion(llamada.argumentos[0])
+            return int(arg)
+        
+        elif llamada.nombre == 'convertir_a_flotante':
+            arg = self.evaluar_expresion(llamada.argumentos[0])
+            return float(arg)
+        
+        # Funciones matemáticas
+        elif llamada.nombre == 'abs':
+            arg = self.evaluar_expresion(llamada.argumentos[0])
+            return abs(arg)
+        
+        elif llamada.nombre == 'max':
+            a = self.evaluar_expresion(llamada.argumentos[0])
+            b = self.evaluar_expresion(llamada.argumentos[1])
+            return max(a, b)
+        
+        elif llamada.nombre == 'min':
+            a = self.evaluar_expresion(llamada.argumentos[0])
+            b = self.evaluar_expresion(llamada.argumentos[1])
+            return min(a, b)
+        
+        # Funciones definidas por usuario
+        else:
+            args = [self.evaluar_expresion(arg) for arg in llamada.argumentos]
+            return self.ejecutar_funcion(llamada.nombre, args)
+
+
+def main():
+    """Función principal del intérprete"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description='Intérprete de Jade - Ejecuta programas Jade directamente',
+        prog='jade-interpreter'
+    )
+    
+    parser.add_argument('archivo', help='Archivo .jde a ejecutar')
+    parser.add_argument('--debug', action='store_true',
+                       help='Mostrar información de debug')
+    
+    args = parser.parse_args()
+    
+    try:
+        # Leer archivo
+        with open(args.archivo, 'r', encoding='utf-8') as f:
+            codigo = f.read()
+        
+        if args.debug:
+            print(f">>> Ejecutando {args.archivo}...\n")
+        
+        # Tokenizar
+        tokens = tokenizar_codigo(codigo)
+        
+        # Parsear
+        programa = parsear_codigo(tokens)
+        
+        # Análisis semántico
+        analizador = AnalizadorSemantico()
+        analizador.analizar(programa)
+        
+        if args.debug:
+            print(">>> Análisis completado, ejecutando...\n")
+        
+        # Ejecutar
+        interprete = InterpreteJade()
+        interprete.ejecutar_programa(programa)
+        
+    except FileNotFoundError:
+        print(f"Error: Archivo no encontrado: {args.archivo}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        import traceback
+        if args.debug:
+            traceback.print_exc()
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

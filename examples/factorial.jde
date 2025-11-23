@@ -1,0 +1,15 @@
+funcion factorial(entero n)
+    variable resultado = 1
+    para i desde 2 hasta n + 1 hacer
+        resultado = resultado * i
+    fin
+    retornar resultado
+fin
+
+funcion main()
+    mostrar("Factoriales del 1 al 10:")
+    para i desde 1 hasta 11 hacer
+        variable fact = factorial(i)
+        mostrar(convertir_a_texto(i) + "! = " + convertir_a_texto(fact))
+    fin
+fin

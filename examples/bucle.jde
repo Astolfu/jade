@@ -1,0 +1,7 @@
+funcion main()
+    mostrar("=== Bucle Para ===")
+    para i desde 1 hasta 6 hacer
+        mostrar("Numero: " + convertir_a_texto(i))
+    fin
+    mostrar("Fin del bucle")
+fin

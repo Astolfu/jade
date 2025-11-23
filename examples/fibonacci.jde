@@ -1,0 +1,26 @@
+funcion fibonacci(entero n)
+    si n <= 1 entonces
+        retornar n
+    fin
+    
+    variable a = 0
+    variable b = 1
+    variable i = 2
+    
+    mientras i <= n hacer
+        variable temp = a + b
+        a = b
+        b = temp
+        i = i + 1
+    fin
+    
+    retornar b
+fin
+
+funcion main()
+    mostrar("Secuencia de Fibonacci:")
+    para i desde 0 hasta 15 hacer
+        variable fib = fibonacci(i)
+        mostrar("fib(" + convertir_a_texto(i) + ") = " + convertir_a_texto(fib))
+    fin
+fin
