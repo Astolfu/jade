@@ -1,5 +1,5 @@
-"""
-Parser (Analizador Sintáctico) para Jade
+﻿"""
+Parser (Analizador Sint├íctico) para Jade
 Construye un AST a partir de tokens
 """
 
@@ -20,7 +20,7 @@ class Parser:
         """Lanza un error de sintaxis"""
         if self.token_actual:
             raise SyntaxError(
-                f"Error de sintaxis en línea {self.token_actual.linea}, "
+                f"Error de sintaxis en l├¡nea {self.token_actual.linea}, "
                 f"columna {self.token_actual.columna}: {mensaje}"
             )
         else:
@@ -37,7 +37,7 @@ class Parser:
     def esperar(self, tipo: TokenType) -> Token:
         """Verifica que el token actual sea del tipo esperado y avanza"""
         if not self.token_actual or self.token_actual.tipo != tipo:
-            self.error(f"Se esperaba {tipo.name}, pero se encontró {self.token_actual.tipo.name if self.token_actual else 'EOF'}")
+            self.error(f"Se esperaba {tipo.name}, pero se encontr├│ {self.token_actual.tipo.name if self.token_actual else 'EOF'}")
         token = self.token_actual
         self.avanzar()
         return token
@@ -70,17 +70,17 @@ class Parser:
         elif self.verificar(TokenType.VARIABLE, TokenType.CONSTANTE):
             return self.declaracion_variable()
         else:
-            self.error(f"Declaración inesperada: {self.token_actual.valor}")
+            self.error(f"Declaraci├│n inesperada: {self.token_actual.valor}")
     
     def declaracion_funcion(self) -> DeclaracionFuncion:
-        """Parsea una declaración de función"""
+        """Parsea una declaraci├│n de funci├│n"""
         token_funcion = self.esperar(TokenType.FUNCION)
         nombre_token = self.esperar(TokenType.IDENTIFICADOR)
         nombre = nombre_token.valor
         
         self.esperar(TokenType.PARENTESIS_IZQ)
         
-        # Parámetros
+        # Par├ímetros
         parametros = []
         if not self.verificar(TokenType.PARENTESIS_DER):
             parametros.append(self.parametro())
@@ -93,7 +93,7 @@ class Parser:
         # Tipo de retorno opcional (futuro)
         tipo_retorno = None
         
-        # Cuerpo de la función
+        # Cuerpo de la funci├│n
         cuerpo = self.bloque()
         
         self.esperar(TokenType.FIN)
@@ -101,11 +101,11 @@ class Parser:
         return DeclaracionFuncion(nombre, parametros, tipo_retorno, cuerpo, token_funcion)
     
     def parametro(self) -> tuple:
-        """Parsea un parámetro de función"""
+        """Parsea un par├ímetro de funci├│n"""
         # Puede ser: nombre o tipo nombre
         tipo = None
         
-        # Verificar si hay tipo explícito
+        # Verificar si hay tipo expl├¡cito
         if self.verificar(TokenType.ENTERO, TokenType.FLOTANTE, TokenType.BOOLEANO, 
                           TokenType.TEXTO, TokenType.LISTA, TokenType.MAPA):
             tipo = self.token_actual.valor
@@ -149,15 +149,15 @@ class Parser:
         elif self.verificar(TokenType.CONTINUAR):
             return self.statement_continuar()
         elif self.verificar(TokenType.IDENTIFICADOR):
-            # Puede ser asignación o expresión
+            # Puede ser asignaci├│n o expresi├│n
             return self.asignacion_o_expresion()
         else:
-            # Expresión statement
+            # Expresi├│n statement
             expr = self.expresion()
             return ExpresionStatement(expr)
     
     def declaracion_variable(self) -> DeclaracionVariable:
-        """Parsea declaración de variable o constante"""
+        """Parsea declaraci├│n de variable o constante"""
         es_constante = self.verificar(TokenType.CONSTANTE)
         token = self.token_actual
         self.avanzar()  # variable o constante
@@ -166,7 +166,7 @@ class Parser:
         # O: tipo nombre = valor
         tipo_dato = None
         
-        # Verificar tipo explícito
+        # Verificar tipo expl├¡cito
         if self.verificar(TokenType.ENTERO, TokenType.FLOTANTE, TokenType.BOOLEANO, 
                           TokenType.TEXTO, TokenType.LISTA, TokenType.MAPA):
             tipo_dato = self.token_actual.valor
@@ -182,14 +182,14 @@ class Parser:
         return DeclaracionVariable(nombre, tipo_dato, valor, es_constante, token)
     
     def asignacion_o_expresion(self) -> Statement:
-        """Parsea asignación o expresión que empieza con identificador"""
-        # Mirar adelante para ver si es asignación
+        """Parsea asignaci├│n o expresi├│n que empieza con identificador"""
+        # Mirar adelante para ver si es asignaci├│n
         if self.posicion + 1 < len(self.tokens):
             siguiente = self.tokens[self.posicion + 1]
             if siguiente.tipo in (TokenType.ASIGNAR, TokenType.MAS_IGUAL, 
                                  TokenType.MENOS_IGUAL, TokenType.MULTIPLICAR_IGUAL, 
                                  TokenType.DIVIDIR_IGUAL):
-                # Es asignación simple
+                # Es asignaci├│n simple
                 nombre = self.token_actual.valor
                 self.avanzar()
                 operador = self.token_actual
@@ -197,7 +197,7 @@ class Parser:
                 valor = self.expresion()
                 return Asignacion(nombre, valor, operador)
             elif siguiente.tipo == TokenType.CORCHETE_IZQ:
-                # Podría ser asignación a índice: arr[i] = valor
+                # Podr├¡a ser asignaci├│n a ├¡ndice: arr[i] = valor
                 objeto = Identificador(self.token_actual.valor, self.token_actual)
                 self.avanzar()
                 self.esperar(TokenType.CORCHETE_IZQ)
@@ -210,11 +210,11 @@ class Parser:
                     valor = self.expresion()
                     return AsignacionIndice(objeto, indice, valor, token_asig)
                 else:
-                    # Es solo acceso a índice como expresión
+                    # Es solo acceso a ├¡ndice como expresi├│n
                     acc = AccesoIndice(objeto, indice, objeto.token)
                     return ExpresionStatement(acc)
         
-        # Es solo una expresión
+        # Es solo una expresi├│n
         expr = self.expresion()
         return ExpresionStatement(expr)
     
@@ -300,11 +300,11 @@ class Parser:
     # ========================================================================
     
     def expresion(self) -> Expresion:
-        """Parsea una expresión (precedencia más baja: or lógico)"""
+        """Parsea una expresi├│n (precedencia m├ís baja: or l├│gico)"""
         return self.expresion_logica_o()
     
     def expresion_logica_o(self) -> Expresion:
-        """Parsea OR lógico"""
+        """Parsea OR l├│gico"""
         izq = self.expresion_logica_y()
         
         while self.verificar(TokenType.O):
@@ -316,7 +316,7 @@ class Parser:
         return izq
     
     def expresion_logica_y(self) -> Expresion:
-        """Parsea AND lógico"""
+        """Parsea AND l├│gico"""
         izq = self.expresion_igualdad()
         
         while self.verificar(TokenType.Y):
@@ -365,7 +365,7 @@ class Parser:
         return izq
     
     def expresion_multiplicativa(self) -> Expresion:
-        """Parsea multiplicación, división y módulo"""
+        """Parsea multiplicaci├│n, divisi├│n y m├│dulo"""
         izq = self.expresion_potencia()
         
         while self.verificar(TokenType.MULTIPLICAR, TokenType.DIVIDIR, TokenType.MODULO):
@@ -377,7 +377,7 @@ class Parser:
         return izq
     
     def expresion_potencia(self) -> Expresion:
-        """Parsea potenciación"""
+        """Parsea potenciaci├│n"""
         izq = self.expresion_unaria()
         
         if self.verificar(TokenType.POTENCIA):
@@ -400,12 +400,12 @@ class Parser:
         return self.expresion_postfija()
     
     def expresion_postfija(self) -> Expresion:
-        """Parsea llamadas a función y acceso a índice"""
+        """Parsea llamadas a funci├│n y acceso a ├¡ndice"""
         expr = self.expresion_primaria()
         
         while True:
             if self.verificar(TokenType.PARENTESIS_IZQ):
-                # Llamada a función
+                # Llamada a funci├│n
                 token = self.token_actual
                 self.avanzar()
                 
@@ -425,7 +425,7 @@ class Parser:
                     self.error("Solo se puede llamar a funciones con nombre")
             
             elif self.verificar(TokenType.CORCHETE_IZQ):
-                # Acceso a índice
+                # Acceso a ├¡ndice
                 token = self.token_actual
                 self.avanzar()
                 indice = self.expresion()
@@ -439,7 +439,7 @@ class Parser:
     
     def expresion_primaria(self) -> Expresion:
         """Parsea expresiones primarias (literales, identificadores, etc.)"""
-        # Literales numéricos
+        # Literales num├®ricos
         if self.verificar(TokenType.LITERAL_ENTERO):
             token = self.token_actual
             valor = int(token.valor)
@@ -472,6 +472,44 @@ class Parser:
         # Nulo
         if self.verificar(TokenType.NULO):
             token = self.token_actual
+            self.avanzar()
+            return LiteralNulo(token)
+        
+        # Identificadores
+        if self.verificar(TokenType.IDENTIFICADOR):
+            token = self.token_actual
+            nombre = token.valor
+            self.avanzar()
+            return Identificador(nombre, token)
+        
+        # Listas
+        if self.verificar(TokenType.CORCHETE_IZQ):
+            return self.expresion_lista()
+        
+        # Mapas
+        if self.verificar(TokenType.LLAVE_IZQ):
+            return self.expresion_mapa()
+        
+        # Expresiones entre par├®ntesis
+        if self.verificar(TokenType.PARENTESIS_IZQ):
+            self.avanzar()
+            expr = self.expresion()
+            self.esperar(TokenType.PARENTESIS_DER)
+            return expr
+        
+        self.error(f"Expresi├│n inesperada: {self.token_actual.valor if self.token_actual else 'EOF'}")
+    
+    def expresion_lista(self) -> LiteralLista:
+        """Parsea literal de lista [1, 2, 3]"""
+        token = self.esperar(TokenType.CORCHETE_IZQ)
+        
+        elementos = []
+        if not self.verificar(TokenType.CORCHETE_DER):
+            elementos.append(self.expresion())
+            while self.verificar(TokenType.COMA):
+                self.avanzar()
+                if self.verificar(TokenType.CORCHETE_DER):  # Coma final opcional
+                    break
                 elementos.append(self.expresion())
         
         self.esperar(TokenType.CORCHETE_DER)
@@ -503,6 +541,6 @@ class Parser:
 
 
 def parsear_codigo(tokens: List[Token]) -> Programa:
-    """Función de utilidad para parsear tokens"""
+    """Funci├│n de utilidad para parsear tokens"""
     parser = Parser(tokens)
     return parser.parsear()
