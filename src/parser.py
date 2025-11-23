@@ -472,44 +472,6 @@ class Parser:
         # Nulo
         if self.verificar(TokenType.NULO):
             token = self.token_actual
-            self.avanzar()
-            return LiteralNulo(token)
-        
-        # Identificadores
-        if self.verificar(TokenType.IDENTIFICADOR):
-            token = self.token_actual
-            nombre = token.valor
-            self.avanzar()
-            return Identificador(nombre, token)
-        
-        # Listas
-        if self.verificar(TokenType.CORCHETE_IZQ):
-            return self.expresion_lista()
-        
-        # Mapas
-        if self.verificar(TokenType.LLAVE_IZQ):
-            return self.expresion_mapa()
-        
-        # Expresiones entre paréntesis
-        if self.verificar(TokenType.PARENTESIS_IZQ):
-            self.avanzar()
-            expr = self.expresion()
-            self.esperar(TokenType.PARENTESIS_DER)
-            return expr
-        
-        self.error(f"Expresión inesperada: {self.token_actual.valor if self.token_actual else 'EOF'}")
-    
-    def expresion_lista(self) -> LiteralLista:
-        """Parsea literal de lista [1, 2, 3]"""
-        token = self.esperar(TokenType.CORCHETE_IZQ)
-        
-        elementos = []
-        if not self.verificar(TokenType.CORCHETE_DER):
-            elementos.append(self.expresion())
-            while self.verificar(TokenType.COMA):
-                self.avanzar()
-                if self.verificar(TokenType.CORCHETE_DER):  # Coma final opcional
-                    break
                 elementos.append(self.expresion())
         
         self.esperar(TokenType.CORCHETE_DER)

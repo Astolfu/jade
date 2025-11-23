@@ -101,6 +101,34 @@ def inferir_tipo_binario(tipo_izq: Tipo, operador: str, tipo_der: Tipo) -> Tipo:
     return TIPO_DESCONOCIDO
 
 
+class TipoLista(Tipo):
+    """Tipo de lista parametrizado por el tipo de elemento"""
+    
+    def __init__(self, tipo_elemento: Tipo):
+        super().__init__(TipoDato.LISTA, tipo_elemento)
+    
+    def __repr__(self):
+        return f"lista[{self.tipo_elemento}]"
+    
+    def __str__(self):
+        return f"lista[{str(self.tipo_elemento)}]"
+
+
+class TipoMapa(Tipo):
+    """Tipo de mapa parametrizado por tipos de clave y valor"""
+    
+    def __init__(self, tipo_clave: Tipo, tipo_valor: Tipo):
+        super().__init__(TipoDato.MAPA)
+        self.tipo_clave = tipo_clave
+        self.tipo_valor = tipo_valor
+    
+    def __repr__(self):
+        return f"mapa[{self.tipo_clave}, {self.tipo_valor}]"
+    
+    def __str__(self):
+        return f"mapa[{str(self.tipo_clave)}, {str(self.tipo_valor)}]"
+
+
 def puede_convertir(desde: Tipo, hacia: Tipo) -> bool:
     """Verifica si se puede convertir un tipo a otro"""
     # Mismo tipo
