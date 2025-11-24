@@ -15,6 +15,7 @@ class TipoDato(Enum):
     LISTA = auto()
     MAPA = auto()
     TUPLA = auto()
+    ESTRUCTURA = auto()
     NULO = auto()
     FUNCION = auto()
     DESCONOCIDO = auto()
@@ -84,7 +85,9 @@ def inferir_tipo_binario(tipo_izq: Tipo, operador: str, tipo_der: Tipo) -> Tipo:
         if tipo_izq.es_numerico() and tipo_der.es_numerico():
             # Si alguno es flotante, el resultado es flotante
             if tipo_izq.tipo_base == TipoDato.FLOTANTE or tipo_der.tipo_base == TipoDato.FLOTANTE:
-                return TIPO_FLOTANTE
+                return TIPO_F
+
+LOTANTE
             return TIPO_ENTERO
         elif operador == '+' and tipo_izq.tipo_base == TipoDato.TEXTO:
             # Concatenación de strings
@@ -127,6 +130,43 @@ class TipoMapa(Tipo):
     
     def __str__(self):
         return f"mapa[{str(self.tipo_clave)}, {str(self.tipo_valor)}]"
+
+
+class TipoEstructura(Tipo):
+    """Tipo de estructura con campos y métodos"""
+    
+    def __init__(self, nombre: str, campos: dict = None, metodos: dict = None):
+        super().__init__(TipoDato.ESTRUCTURA)
+        self.nombre = nombre
+        self.campos = campos or {}  # {nombre_campo: Tipo}
+        self.metodos = metodos or {}  # {nombre_metodo: DeclaracionFuncion}
+    
+    def obtener_tipo_campo(self, nombre_campo: str):
+        """Obtiene el tipo de un campo"""
+        return self.campos.get(nombre_campo)
+    
+    def tiene_campo(self, nombre_campo: str) -> bool:
+        """Verifica si la estructura tiene un campo"""
+        return nombre_campo in self.campos
+    
+    def tiene_metodo(self, nombre_metodo: str) -> bool:
+        """Verifica si la estructura tiene un método"""
+        return nombre_metodo in self.metodos
+    
+    def obtener_metodo(self, nombre_metodo: str):
+        """Obtiene la declaración de un método"""
+        return self.metodos.get(nombre_metodo)
+    
+    def __eq__(self, otro):
+        if not isinstance(otro, TipoEstructura):
+            return False
+        return self.nombre == otro.nombre
+    
+    def __repr__(self):
+        return f"estructura {self.nombre}"
+    
+    def __str__(self):
+        return self.nombre
 
 
 def puede_convertir(desde: Tipo, hacia: Tipo) -> bool:

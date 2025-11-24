@@ -26,6 +26,10 @@ class TokenType(Enum):
     FUNCION = auto()         # funcion
     RETORNAR = auto()        # retornar
     
+    # Palabras reservadas - Estructuras
+    ESTRUCTURA = auto()      # estructura
+    ESTE = auto()            # este
+    
     # Palabras reservadas - Declaraciones
     VARIABLE = auto()        # variable
     CONSTANTE = auto()       # constante
@@ -145,6 +149,10 @@ PALABRAS_RESERVADAS = {
     # Funciones
     'funcion': TokenType.FUNCION,
     'retornar': TokenType.RETORNAR,
+    
+    # Estructuras
+    'estructura': TokenType.ESTRUCTURA,
+    'este': TokenType.ESTE,
     
     # Declaraciones
     'variable': TokenType.VARIABLE,

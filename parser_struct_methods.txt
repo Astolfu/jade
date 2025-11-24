@@ -1,0 +1,60 @@
+# Add these methods to Parser class in parser.py
+
+def declaracion_estructura(self) -> DeclaracionEstructura:
+    """Parsea una declaración de estructura"""
+    token = self.esperar(TokenType.ESTRUCTURA)
+    nombre_token = self.esperar(TokenType.IDENTIFICADOR)
+    nombre = nombre_token.valor
+    
+    self.esperar(TokenType.LLAVE_IZQ)
+    
+    campos = []
+    metodos = []
+    
+    while not self.verificar(TokenType.LLAVE_DER):
+        # Puede ser campo o método
+        if self.verificar(TokenType.FUNCION):
+            # Es un método
+            metodos.append(self.declaracion_funcion())
+        else:
+            # Es un campo: nombre: tipo
+            nombre_campo_token = self.esperar(TokenType.IDENTIFICADOR)
+            nombre_campo = nombre_campo_token.valor
+            self.esperar(TokenType.DOS_PUNTOS)
+            tipo_token = self.esperar(TokenType.IDENTIFICADOR)  # Acepta cualquier identificador como tipo
+            tipo_nombre = tipo_token.valor
+            
+            campos.append((nombre_campo, tipo_nombre))
+            
+            # Los campos no terminan con nada, siguiente puede ser otro campo o }
+    
+    self.esperar(TokenType.LLAVE_DER)
+    
+    return DeclaracionEstructura(nombre, campos, metodos, token)
+
+def instancia_estructura(self, nombre_estructura: str, token: Token) -> InstanciaEstructura:
+    """Parsea instancia de estructura: NombreEstructura { campo: valor, ... }"""
+    self.esperar(TokenType.LLAVE_IZQ)
+    
+    inicializadores = []
+    if not self.verificar(TokenType.LLAVE_DER):
+        # Primer inicializador
+        nombre_campo_token = self.esperar(TokenType.IDENTIFICADOR)
+        nombre_campo = nombre_campo_token.valor
+        self.esperar(TokenType.DOS_PUNTOS)
+        valor = self.expresion()
+        inicializadores.append((nombre_campo, valor))
+        
+        while self.verificar(TokenType.COMA):
+            self.avanzar()
+            if self.verificar(TokenType.LLAVE_DER):  # Coma final opcional
+                break
+            nombre_campo_token = self.esperar(TokenType.IDENTIFICADOR)
+            nombre_campo = nombre_campo_token.valor
+            self.esperar(TokenType.DOS_PUNTOS)
+            valor = self.expresion()
+            inicializadores.append((nombre_campo, valor))
+    
+    self.esperar(TokenType.LLAVE_DER)
+    
+    return InstanciaEstructura(nombre_estructura, inicializadores, token)
