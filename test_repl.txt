@@ -1,0 +1,14 @@
+# Test simple del REPL
+# Para ejecutar: cat test_repl.txt | python src/main.py --repl
+
+variable x = 5
+x + 10
+variable y = 20
+x * y
+funcion doble(n)
+retornar n * 2
+fin
+doble(x)
+doble(y)
+:vars
+:salir

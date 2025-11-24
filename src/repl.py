@@ -6,14 +6,14 @@ Permite ejecutar código Jade de forma interactiva
 import sys
 from lexer import Lexer
 from parser import Parser
-from interpreter import Interpreter
+from interpreter import InterpreteJade
 
 
 class JadeREPL:
     """REPL interactivo para Jade"""
     
     def __init__(self):
-        self.interpreter = Interpreter()
+        self.interpreter = InterpreteJade()
         self.historial = []
         self.buffer_multilinea = []
         
@@ -94,11 +94,11 @@ class JadeREPL:
             self.mostrar_variables()
             
         elif cmd in [':limpiar', ':c', ':clear']:
-            self.interpreter = Interpreter()
+            self.interpreter = InterpreteJade()
             print("Variables limpiadas")
             
         elif cmd in [':reset', ':r']:
-            self.interpreter = Interpreter()
+            self.interpreter = InterpreteJade()
             self.historial = []
             print("REPL reiniciado")
             

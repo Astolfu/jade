@@ -271,17 +271,30 @@ def main():
         prog='jade'
     )
     
-    parser.add_argument('archivo', help='Archivo .jde a compilar')
+    parser.add_argument('archivo', nargs='?', help='Archivo .jde a compilar')
     parser.add_argument('--tokens', action='store_true', 
                        help='Mostrar tokens generados')
     parser.add_argument('--ast', action='store_true',
                        help='Mostrar árbol de sintaxis abstracta')
     parser.add_argument('--ir', action='store_true',
                        help='Mostrar LLVM IR generado')
+    parser.add_argument('--repl', action='store_true',
+                       help='Iniciar REPL interactivo')
     parser.add_argument('--version', action='version',
                        version='Jade 0.1.0')
     
     args = parser.parse_args()
+    
+    # Modo REPL
+    if args.repl:
+        from repl import JadeREPL
+        repl = JadeREPL()
+        repl.run()
+        return
+    
+    # Verificar que se proporcionó un archivo
+    if not args.archivo:
+        parser.error('Se requiere un archivo a menos que uses --repl')
     
     # Verificar extensión
     if not args.archivo.endswith('.jde'):
