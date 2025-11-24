@@ -1,0 +1,42 @@
+# Ejemplo de uso de estructuras en Jade
+
+estructura Punto {
+    x: entero
+    y: entero
+    
+    funcion distancia_origen()
+        retornar este.x * este.x + este.y * este.y
+    fin
+}
+
+estructura Persona {
+    nombre: texto
+    edad: entero
+    
+    funcion saludar()
+        mostrar("Hola, soy " + este.nombre)
+    fin
+    
+    funcion cumpleanios()
+        este.edad = este.edad + 1
+    fin
+}
+
+funcion main()
+    # Crear instancia de Punto
+    variable p = Punto { x: 3, y: 4 }
+    mostrar("Punto: (" + convertir_a_texto(p.x) + ", " + convertir_a_texto(p.y) + ")")
+    mostrar("Distancia^2: " + convertir_a_texto(p.distancia_origen()))
+    
+    # Modificar campo
+    p.x = 5
+    mostrar("Nuevo x: " + convertir_a_texto(p.x))
+    
+    # Crear instancia de Persona
+    variable persona = Persona { nombre: "Juan", edad: 30 }
+    persona.saludar()
+    mostrar("Edad: " + convertir_a_texto(persona.edad))
+    
+    persona.cumpleanios()
+    mostrar("Nueva edad: " + convertir_a_texto(persona.edad))
+fin
