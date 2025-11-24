@@ -454,7 +454,7 @@ class AnalizadorSemantico:
             builtin = obtener_funcion_builtin(llamada.nombre)
             
             # Verificar número de argumentos (más permisivo para built-ins)
-            if builtin.nombre != 'convertir_a_texto':  # Esta acepta cualquier tipo
+            if builtin.nombre != not in ['convertir_a_texto', 'f']:  # Esta acepta cualquier tipo
                 if len(llamada.argumentos) != len(builtin.parametros):
                     self.error(
                         f"Función '{llamada.nombre}' espera {len(builtin.parametros)} argumentos, "

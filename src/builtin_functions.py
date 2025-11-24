@@ -99,6 +99,12 @@ FUNCIONES_BUILTIN = {
         [('texto', TIPO_TEXTO), ('subcadena', TIPO_TEXTO)],
         TIPO_BOOLEANO
     ),
+    # String interpolation
+    'f': FuncionBuiltIn(
+        'f',
+        [('template', TIPO_TEXTO)],
+        TIPO_TEXTO
+    ),
 }
 
 
