@@ -4,6 +4,7 @@ Ejecuta programas Jade directamente sin compilar
 """
 
 import sys
+import os
 from lexer import tokenizar_codigo
 from parser import parsear_codigo
 from semantic_analyzer import AnalizadorSemantico
@@ -15,18 +16,24 @@ from token_types import TokenType
 class InterpreteJade:
     """Intérprete que ejecuta código Jade directamente"""
     
-    def __init__(self):
+    def __init__(self, archivo_actual: str = ""):
         self.variables = {}  # Scope global
         self.funciones = {}  # Funciones definidas
         self.valor_retorno = None
         self.debe_retornar = False
+        
+        # Sistema de módulos
+        self.archivo_actual = os.path.abspath(archivo_actual) if archivo_actual else os.getcwd()
+        self.archivos_importados = {self.archivo_actual}
     
     def ejecutar_programa(self, programa: Programa):
         """Ejecuta un programa Jade"""
-        # Registrar todas las funciones primero
+        # Registrar todas las funciones e imports primero
         for decl in programa.declaraciones:
             if isinstance(decl, DeclaracionFuncion):
                 self.funciones[decl.nombre] = decl
+            elif isinstance(decl, Importar):
+                self.ejecutar_importar(decl)
         
         # Ejecutar función main
         if 'main' in self.funciones:
@@ -34,6 +41,55 @@ class InterpreteJade:
         else:
             print("Error: No se encontró función 'main'")
     
+    def ejecutar_importar(self, imp: Importar):
+        """Ejecuta una importación"""
+        # Resolver ruta absoluta
+        dir_actual = os.path.dirname(self.archivo_actual)
+        ruta_abs = os.path.abspath(os.path.join(dir_actual, imp.ruta))
+        
+        # Verificar existencia
+        if not os.path.exists(ruta_abs):
+            raise FileNotFoundError(f"No se encuentra el módulo '{imp.ruta}'")
+            
+        # Evitar ciclos y re-importaciones
+        if ruta_abs in self.archivos_importados:
+            return
+        
+        self.archivos_importados.add(ruta_abs)
+        
+        try:
+            # Cargar y parsear módulo
+            with open(ruta_abs, 'r', encoding='utf-8') as f:
+                codigo = f.read()
+            
+            # Importaciones locales
+            from lexer import tokenizar_codigo
+            from parser import parsear_codigo
+            
+            tokens = tokenizar_codigo(codigo)
+            modulo_ast = parsear_codigo(tokens)
+            
+            # Ejecutar módulo recursivamente
+            interprete_modulo = InterpreteJade(ruta_abs)
+            interprete_modulo.archivos_importados = self.archivos_importados
+            
+            # Registrar funciones del módulo
+            for decl in modulo_ast.declaraciones:
+                if isinstance(decl, DeclaracionFuncion):
+                    interprete_modulo.funciones[decl.nombre] = decl
+                elif isinstance(decl, Importar):
+                    interprete_modulo.ejecutar_importar(decl)
+            
+            # Fusionar funciones
+            for nombre, func in interprete_modulo.funciones.items():
+                if nombre not in self.funciones:
+                    self.funciones[nombre] = func
+                elif nombre != 'main':
+                    pass
+                    
+        except Exception as e:
+            raise RuntimeError(f"Error al importar '{imp.ruta}': {str(e)}")
+
     def ejecutar_funcion(self, nombre: str, argumentos: list):
         """Ejecuta una función"""
         if nombre not in self.funciones:

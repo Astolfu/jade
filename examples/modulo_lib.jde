@@ -1,0 +1,8 @@
+// Módulo biblioteca
+funcion saludar(texto nombre)
+    mostrar(f("Hola {}, saludos desde el módulo!", nombre))
+fin
+
+funcion sumar(entero a, entero b)
+    retornar a + b
+fin

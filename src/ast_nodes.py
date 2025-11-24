@@ -239,7 +239,6 @@ class Para(Statement):
         self.fin = fin
         self.cuerpo = cuerpo
         self.token = token
-    
     def __repr__(self):
         return f"Para({self.variable} desde {self.inicio} hasta {self.fin})"
 
@@ -270,6 +269,16 @@ class Continuar(Statement):
     
     def __repr__(self):
         return "Continuar()"
+
+
+class Importar(Statement):
+    """Statement importar"""
+    def __init__(self, ruta: str, token: Token):
+        self.ruta = ruta
+        self.token = token
+    
+    def __repr__(self):
+        return f"Importar('{self.ruta}')"
 
 
 class ExpresionStatement(Statement):

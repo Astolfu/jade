@@ -1,0 +1,11 @@
+// Programa principal que usa módulos
+importar "modulo_lib.jde"
+
+funcion main()
+    mostrar("Probando sistema de módulos...")
+    
+    saludar("Jade User")
+    
+    variable resultado = sumar(10, 20)
+    mostrar(f("La suma de 10 + 20 es: {}", resultado))
+fin

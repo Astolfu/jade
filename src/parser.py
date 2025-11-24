@@ -69,8 +69,16 @@ class Parser:
             return self.declaracion_funcion()
         elif self.verificar(TokenType.VARIABLE, TokenType.CONSTANTE):
             return self.declaracion_variable()
+        elif self.verificar(TokenType.IMPORTAR):
+            return self.declaracion_importar()
         else:
-            self.error(f"Declaraci├│n inesperada: {self.token_actual.valor}")
+            self.error(f"Declaración inesperada: {self.token_actual.valor}")
+    
+    def declaracion_importar(self) -> Importar:
+        """Parsea una declaración de importación"""
+        token = self.esperar(TokenType.IMPORTAR)
+        ruta_token = self.esperar(TokenType.LITERAL_TEXTO)
+        return Importar(ruta_token.valor, token)
     
     def declaracion_funcion(self) -> DeclaracionFuncion:
         """Parsea una declaraci├│n de funci├│n"""

@@ -3,11 +3,15 @@ Analizador semántico para Jade
 Verifica tipos, scopes y semántica del programa
 """
 
-from typing import Dict, List, Optional
+import os
+from typing import Dict, List, Optional, Set
 from ast_nodes import *
 from type_system import *
 from token_types import TokenType
 from builtin_functions import es_funcion_builtin, obtener_funcion_builtin
+
+# Importaciones diferidas para evitar ciclos circulares en tiempo de carga
+# Se importarán dentro de los métodos cuando sea necesario
 
 
 class TablaSimbolos:
@@ -50,12 +54,16 @@ class TablaSimbolos:
 class AnalizadorSemantico:
     """Analizador semántico que verifica tipos y contexto"""
     
-    def __init__(self):
+    def __init__(self, archivo_actual: str = ""):
         self.scope_actual = TablaSimbolos()
         self.funciones: Dict[str, tuple] = {}  # nombre -> (params, tipo_retorno)
         self.en_funcion = None  # Nombre de la función actual
         self.en_bucle = False
         self.errores: List[str] = []
+        
+        # Sistema de módulos
+        self.archivo_actual = os.path.abspath(archivo_actual) if archivo_actual else os.getcwd()
+        self.archivos_importados: Set[str] = {self.archivo_actual}
     
     def error(self, mensaje: str, nodo=None):
         """Registra un error semántico"""
@@ -68,12 +76,14 @@ class AnalizadorSemantico:
     
     def analizar(self, programa: Programa):
         """Analiza el programa completo"""
-        # Primera pasada: registrar todas las funciones
+        # Primera pasada: registrar funciones e imports
         for decl in programa.declaraciones:
             if isinstance(decl, DeclaracionFuncion):
                 self.registrar_funcion(decl)
+            elif isinstance(decl, Importar):
+                self.analizar_importar(decl)
         
-        # Segunda pasada: analizar cuerpos de funciones
+        # Segunda pasada: analizar cuerpos de funciones y variables globales
         for decl in programa.declaraciones:
             if isinstance(decl, DeclaracionFuncion):
                 self.analizar_funcion(decl)
@@ -86,6 +96,58 @@ class AnalizadorSemantico:
         
         if self.errores:
             raise SemanticError('\n'.join(self.errores))
+    
+    def analizar_importar(self, imp: Importar):
+        """Analiza y carga un módulo importado"""
+        # Resolver ruta absoluta
+        dir_actual = os.path.dirname(self.archivo_actual)
+        ruta_abs = os.path.abspath(os.path.join(dir_actual, imp.ruta))
+        
+        # Verificar existencia
+        if not os.path.exists(ruta_abs):
+            self.error(f"No se encuentra el módulo '{imp.ruta}'", imp)
+            return
+            
+        # Evitar ciclos y re-importaciones
+        if ruta_abs in self.archivos_importados:
+            return
+        
+        self.archivos_importados.add(ruta_abs)
+        
+        try:
+            # Cargar y parsear módulo
+            with open(ruta_abs, 'r', encoding='utf-8') as f:
+                codigo = f.read()
+            
+            # Importaciones locales para evitar ciclos
+            from lexer import tokenizar_codigo
+            from parser import parsear_codigo
+            
+            tokens = tokenizar_codigo(codigo)
+            modulo_ast = parsear_codigo(tokens)
+            
+            # Analizar módulo recursivamente
+            analizador_modulo = AnalizadorSemantico(ruta_abs)
+            # Compartir el set de archivos importados para detectar ciclos globales
+            analizador_modulo.archivos_importados = self.archivos_importados
+            
+            # Analizar (esto registrará las funciones del módulo)
+            analizador_modulo.analizar(modulo_ast)
+            
+            # Fusionar funciones del módulo en el scope actual
+            # Nota: No fusionamos variables globales por ahora para evitar conflictos
+            for nombre, firma in analizador_modulo.funciones.items():
+                if nombre not in self.funciones:
+                    self.funciones[nombre] = firma
+                elif nombre != 'main': # Ignorar main de módulos
+                    # Opcional: advertir sobre redefinición
+                    pass
+                    
+        except Exception as e:
+            self.error(f"Error al importar '{imp.ruta}': {str(e)}", imp)
+        
+        except Exception as e:
+            self.error(f"Error al importar '{imp.ruta}': {str(e)}", imp)
     
     def registrar_funcion(self, func: DeclaracionFuncion):
         """Registra una función en la tabla de símbolos global"""

@@ -74,7 +74,7 @@ class Compilador:
         """Fase de análisis semántico"""
         print("=== Fase 3: Analisis Semantico ===")
         try:
-            analizador = AnalizadorSemantico()
+            analizador = AnalizadorSemantico(self.archivo)
             analizador.analizar(self.ast)
             print("[OK] Analisis semantico completado")
             print(f"  - {len(analizador.funciones)} funciones verificadas")
