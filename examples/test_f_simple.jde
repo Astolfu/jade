@@ -1,0 +1,9 @@
+// Test simple de f() sin LLVM
+funcion main()
+    variable nombre = "María"
+    variable edad = 25
+    
+    mostrar(f("Hola {}", nombre))
+    mostrar(f("{} tiene {} años", nombre, edad))
+    mostrar(f("El doble de {} es {}", edad, edad * 2))
+fin
