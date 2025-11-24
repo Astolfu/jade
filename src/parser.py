@@ -67,8 +67,6 @@ class Parser:
         """Parsea declaraciones de alto nivel (funciones, variables globales)"""
         if self.verificar(TokenType.FUNCION):
             return self.declaracion_funcion()
-        elif self.verificar(TokenType.ESTRUCTURA):
-            return self.declaracion_estructura()
         elif self.verificar(TokenType.VARIABLE, TokenType.CONSTANTE):
             return self.declaracion_variable()
         else:
@@ -435,15 +433,12 @@ class Parser:
                 expr = AccesoIndice(expr, indice, token)
             
             elif self.verificar(TokenType.PUNTO):
-            # Acceso a campo o método
-            self.avanzar()
-            token_nombre = self.esperar(TokenType.IDENTIFICADOR)
-            nombre = token_nombre.valor
-            
-            # Verificar si es método (tiene paréntesis) o campo
-            if self.verificar(TokenType.PARENTESIS_IZQ):
                 # Llamada a método
                 self.avanzar()
+                token_nombre = self.esperar(TokenType.IDENTIFICADOR)
+                nombre_metodo = token_nombre.valor
+                
+                self.esperar(TokenType.PARENTESIS_IZQ)
                 argumentos = []
                 if not self.verificar(TokenType.PARENTESIS_DER):
                     argumentos.append(self.expresion())
@@ -451,10 +446,9 @@ class Parser:
                         self.avanzar()
                         argumentos.append(self.expresion())
                 self.esperar(TokenType.PARENTESIS_DER)
-                expr = LlamadaMetodo(expr, nombre, argumentos, token_nombre)
-            else:
-                # Acceso a campo
-                expr = AccesoCampo(expr, nombre, token_nombre)
+                
+                expr = LlamadaMetodo(expr, nombre_metodo, argumentos, token_nombre)
+            
             else:
                 break
         
@@ -497,24 +491,14 @@ class Parser:
             token = self.token_actual
             self.avanzar()
             return LiteralNulo(token)
-                
-        # Este (self-reference)
-        if self.verificar(TokenType.ESTE):
-            token = self.token_actual
-            self.avanzar()
-            return IdentificadorEste(token)
         
-               # Identificadores
+        # Identificadores
         if self.verificar(TokenType.IDENTIFICADOR):
             token = self.token_actual
             nombre = token.valor
             self.avanzar()
-            
-            # Verificar si es instancia de estructura
-            if self.verificar(TokenType.LLAVE_IZQ):
-                return self.instancia_estructura(nombre, token)
-            
             return Identificador(nombre, token)
+        
         # Listas
         if self.verificar(TokenType.CORCHETE_IZQ):
             return self.expresion_lista()
@@ -572,55 +556,6 @@ class Parser:
         self.esperar(TokenType.LLAVE_DER)
         return LiteralMapa(pares, token)
 
-def declaracion_estructura(self) -> DeclaracionEstructura:
-        """Parsea una declaración de estructura"""
-        token = self.esperar(TokenType.ESTRUCTURA)
-        nombre_token = self.esperar(TokenType.IDENTIFICADOR)
-        nombre = nombre_token.valor
-        
-        self.esperar(TokenType.LLAVE_IZQ)
-        
-        campos = []
-        metodos = []
-        
-        while not self.verificar(TokenType.LLAVE_DER):
-            if self.verificar(TokenType.FUNCION):
-                metodos.append(self.declaracion_funcion())
-            elif self.verificar(TokenType.IDENTIFICADOR):
-                nombre_campo_token = self.token_actual
-                nombre_campo = nombre_campo_token.valor
-                self.avanzar()
-                self.esperar(TokenType.DOS_PUNTOS)
-                tipo_token = self.esperar(TokenType.IDENTIFICADOR)
-                tipo_nombre = tipo_token.valor
-                campos.append((nombre_campo, tipo_nombre))
-            else:
-                self.error(f"Se esperaba campo o método en estructura")
-        
-        self.esperar(TokenType.LLAVE_DER)
-        return DeclaracionEstructura(nombre, campos, metodos, token)
-    
-    def instancia_estructura(self, nombre_estructura: str, token: Token) -> InstanciaEstructura:
-        """Parsea instanciación de estructura"""
-        self.esperar(TokenType.LLAVE_IZQ)
-        inicializadores = []
-        if not self.verificar(TokenType.LLAVE_DER):
-            nombre_campo_token = self.esperar(TokenType.IDENTIFICADOR)
-            nombre_campo = nombre_campo_token.valor
-            self.esperar(TokenType.DOS_PUNTOS)
-            valor = self.expresion()
-            inicializadores.append((nombre_campo, valor))
-            while self.verificar(TokenType.COMA):
-                self.avanzar()
-                if self.verificar(TokenType.LLAVE_DER):
-                    break
-                nombre_campo_token = self.esperar(TokenType.IDENTIFICADOR)
-                nombre_campo = nombre_campo_token.valor
-                self.esperar(TokenType.DOS_PUNTOS)
-                valor = self.expresion()
-                inicializadores.append((nombre_campo, valor))
-        self.esperar(TokenType.LLAVE_DER)
-        return InstanciaEstructura(nombre_estructura, inicializadores, token)
 
 def parsear_codigo(tokens: List[Token]) -> Programa:
     """Funci├│n de utilidad para parsear tokens"""

@@ -300,51 +300,6 @@ class DeclaracionFuncion(NodoAST):
         return f"DeclaracionFuncion({self.nombre}({params}))"
 
 
-class DeclaracionEstructura(NodoAST):
-    """Declaración de estructura"""
-    def __init__(self, nombre: str, campos: List[tuple], metodos: List[DeclaracionFuncion], token: Token):
-        self.nombre = nombre
-        self.campos = campos  # Lista de (nombre_campo, tipo_nombre)
-        self.metodos = metodos  # Lista de DeclaracionFuncion
-        self.token = token
-    
-    def __repr__(self):
-        campos_str = ', '.join(f"{nom}: {tipo}" for nom, tipo in self.campos)
-        return f"estructura {self.nombre} {{ {campos_str} }}"
-
-
-class InstanciaEstructura(Expresion):
-    """Instanciación de estructura: Persona { nombre: "Juan", edad: 30 }"""
-    def __init__(self, nombre_estructura: str, inicializadores: List[tuple], token: Token):
-        self.nombre_estructura = nombre_estructura
-        self.inicializadores = inicializadores  # Lista de (nombre_campo, expresion_valor)
-        self.token = token
-    
-    def __repr__(self):
-        inits = ', '.join(f"{campo}: {valor}" for campo, valor in self.inicializadores)
-        return f"{self.nombre_estructura} {{ {inits} }}"
-
-
-class AccesoCampo(Expresion):
-    """Acceso a campo de estructura: persona.nombre"""
-    def __init__(self, objeto: Expresion, nombre_campo: str, token: Token):
-        self.objeto = objeto
-        self.nombre_campo = nombre_campo
-        self.token = token
-    
-    def __repr__(self):
-        return f"{self.objeto}.{self.nombre_campo}"
-
-
-class IdentificadorEste(Expresion):
-    """Keyword 'este' para self-reference en métodos"""
-    def __init__(self, token: Token):
-        self.token = token
-    
-    def __repr__(self):
-        return "este"
-
-
 class Programa(NodoAST):
     """Nodo raíz del programa"""
     def __init__(self, declaraciones: List[NodoAST]):
