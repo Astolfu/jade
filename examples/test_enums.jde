@@ -1,0 +1,38 @@
+// Test de Enums
+
+enum Color {
+    ROJO,
+    VERDE,
+    AZUL
+}
+
+enum Estado {
+    INACTIVO,
+    ACTIVO,
+    PENDIENTE
+}
+
+funcion main()
+    mostrar("Probando Enums...")
+    
+    // Asignación
+    variable c = Color.ROJO
+    mostrar(f("Color seleccionado: {}", c))
+    
+    // Comparación
+    si c == Color.ROJO entonces
+        mostrar("Es rojo!")
+    fin
+    
+    si c != Color.AZUL entonces
+        mostrar("No es azul!")
+    fin
+    
+    // Otro enum
+    variable estado = Estado.ACTIVO
+    mostrar(f("Estado actual: {}", estado))
+    
+    // Reasignación
+    estado = Estado.PENDIENTE
+    mostrar(f("Nuevo estado: {}", estado))
+fin

@@ -71,8 +71,35 @@ class Parser:
             return self.declaracion_variable()
         elif self.verificar(TokenType.IMPORTAR):
             return self.declaracion_importar()
+        elif self.verificar(TokenType.ENUM):
+            return self.declaracion_enum()
         else:
             self.error(f"Declaración inesperada: {self.token_actual.valor}")
+    
+    def declaracion_enum(self) -> DeclaracionEnum:
+        """Parsea una declaración de Enum"""
+        token = self.esperar(TokenType.ENUM)
+        nombre_token = self.esperar(TokenType.IDENTIFICADOR)
+        nombre = nombre_token.valor
+        
+        self.esperar(TokenType.LLAVE_IZQ)
+        
+        valores = []
+        if not self.verificar(TokenType.LLAVE_DER):
+            val_token = self.esperar(TokenType.IDENTIFICADOR)
+            valores.append(val_token.valor)
+            
+            while self.verificar(TokenType.COMA):
+                self.avanzar()
+                # Permitir coma final (trailing comma)
+                if self.verificar(TokenType.LLAVE_DER):
+                    break
+                val_token = self.esperar(TokenType.IDENTIFICADOR)
+                valores.append(val_token.valor)
+        
+        self.esperar(TokenType.LLAVE_DER)
+        
+        return DeclaracionEnum(nombre, valores, token)
     
     def declaracion_importar(self) -> Importar:
         """Parsea una declaración de importación"""
@@ -441,21 +468,26 @@ class Parser:
                 expr = AccesoIndice(expr, indice, token)
             
             elif self.verificar(TokenType.PUNTO):
-                # Llamada a método
+                # Acceso a miembro (método o propiedad)
                 self.avanzar()
                 token_nombre = self.esperar(TokenType.IDENTIFICADOR)
-                nombre_metodo = token_nombre.valor
+                nombre_miembro = token_nombre.valor
                 
-                self.esperar(TokenType.PARENTESIS_IZQ)
-                argumentos = []
-                if not self.verificar(TokenType.PARENTESIS_DER):
-                    argumentos.append(self.expresion())
-                    while self.verificar(TokenType.COMA):
-                        self.avanzar()
+                # Verificar si es llamada a método
+                if self.verificar(TokenType.PARENTESIS_IZQ):
+                    self.avanzar()
+                    argumentos = []
+                    if not self.verificar(TokenType.PARENTESIS_DER):
                         argumentos.append(self.expresion())
-                self.esperar(TokenType.PARENTESIS_DER)
-                
-                expr = LlamadaMetodo(expr, nombre_metodo, argumentos, token_nombre)
+                        while self.verificar(TokenType.COMA):
+                            self.avanzar()
+                            argumentos.append(self.expresion())
+                    self.esperar(TokenType.PARENTESIS_DER)
+                    
+                    expr = LlamadaMetodo(expr, nombre_miembro, argumentos, token_nombre)
+                else:
+                    # Es acceso a propiedad (campo o enum value)
+                    expr = AccesoPropiedad(expr, nombre_miembro, token_nombre)
             
             else:
                 break

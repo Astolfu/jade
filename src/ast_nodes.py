@@ -136,6 +136,17 @@ class AccesoIndice(Expresion):
         return f"AccesoIndice({self.objeto}[{self.indice}])"
 
 
+class AccesoPropiedad(Expresion):
+    """Acceso a propiedad de objeto (obj.propiedad)"""
+    def __init__(self, objeto: Expresion, propiedad: str, token: Token):
+        self.objeto = objeto
+        self.propiedad = propiedad
+        self.token = token
+    
+    def __repr__(self):
+        return f"AccesoPropiedad({self.objeto}.{self.propiedad})"
+
+
 class LiteralLista(Expresion):
     """Literal de lista [1, 2, 3]"""
     def __init__(self, elementos: List[Expresion], token: Token):
@@ -307,6 +318,17 @@ class DeclaracionFuncion(NodoAST):
     def __repr__(self):
         params = ', '.join(f"{n}:{t if t else '?'}" for n, t in self.parametros)
         return f"DeclaracionFuncion({self.nombre}({params}))"
+
+
+class DeclaracionEnum(NodoAST):
+    """Declaración de Enum"""
+    def __init__(self, nombre: str, valores: List[str], token: Token):
+        self.nombre = nombre
+        self.valores = valores
+        self.token = token
+    
+    def __repr__(self):
+        return f"DeclaracionEnum({self.nombre} {{{', '.join(self.valores)}}})"
 
 
 class Programa(NodoAST):

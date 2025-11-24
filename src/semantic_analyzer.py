@@ -82,6 +82,8 @@ class AnalizadorSemantico:
                 self.registrar_funcion(decl)
             elif isinstance(decl, Importar):
                 self.analizar_importar(decl)
+            elif isinstance(decl, DeclaracionEnum):
+                self.registrar_enum(decl)
         
         # Segunda pasada: analizar cuerpos de funciones y variables globales
         for decl in programa.declaraciones:
@@ -154,25 +156,6 @@ class AnalizadorSemantico:
         if func.nombre in self.funciones:
             self.error(f"Función '{func.nombre}' ya está definida", func)
             return
-        
-        # Crear tipos de parámetros
-        tipos_params = []
-        for nombre_param, tipo_nombre in func.parametros:
-            if tipo_nombre:
-                tipo = Tipo.desde_nombre(tipo_nombre)
-            else:
-                tipo = TIPO_DESCONOCIDO  # Inferir más tarde
-            tipos_params.append((nombre_param, tipo))
-        
-        tipo_retorno = TIPO_DESCONOCIDO
-        if func.tipo_retorno:
-            tipo_retorno = Tipo.desde_nombre(func.tipo_retorno)
-        
-        self.funciones[func.nombre] = (tipos_params, tipo_retorno)
-    
-    def analizar_funcion(self, func: DeclaracionFuncion):
-        """Analiza una función"""
-        self.en_funcion = func.nombre
         
         # Crear nuevo scope para la función
         self.scope_actual = self.scope_actual.crear_hijo()
@@ -405,6 +388,9 @@ class AnalizadorSemantico:
         elif isinstance(expr, LlamadaMetodo):
             tipo_resultado = self.analizar_metodo(expr)
             
+        elif isinstance(expr, AccesoPropiedad):
+            tipo_resultado = self.analizar_acceso_propiedad(expr)
+            
         else:
             tipo_resultado = TIPO_DESCONOCIDO
             
@@ -415,6 +401,34 @@ class AnalizadorSemantico:
     def analizar_metodo(self, llamada: LlamadaMetodo) -> Tipo:
         """Analiza llamada a método"""
         tipo_obj = self.analizar_expresion(llamada.objeto)
+
+    def analizar_acceso_propiedad(self, acceso: AccesoPropiedad) -> Tipo:
+        """Analiza acceso a propiedad (ej: Enum.VALOR)"""
+        # Por ahora solo soportamos Enums
+        # El objeto debe ser un identificador que refiere a un TipoEnum
+        
+        # Caso especial: Acceso estático a Enum (Color.ROJO)
+        # En este caso 'Color' es un identificador que se resuelve a un TIPO, no a una variable
+        # Pero nuestro sistema de tipos actual trata los tipos como valores en la tabla de símbolos
+        
+        if isinstance(acceso.objeto, Identificador):
+            # Buscar si es un Enum
+            simbolo = self.scope_actual.buscar(acceso.objeto.nombre)
+            
+            # Si encontramos el símbolo y es un Tipo (que representa al Enum)
+            if simbolo and isinstance(simbolo, Tipo):
+                # Es un acceso a Enum
+                # Verificar que la propiedad es válida
+                # TODO: Necesitamos saber los valores válidos del Enum. 
+                # Por simplicidad, asumimos que si es un tipo válido, el acceso es válido
+                # y retorna una instancia de ese mismo tipo.
+                # En una implementación completa, verificaríamos contra la lista de valores.
+                return simbolo
+        
+        # Si llegamos aquí, intentamos analizarlo como expresión normal
+        tipo_obj = self.analizar_expresion(acceso.objeto)
+        self.error(f"No se puede acceder a propiedad '{acceso.propiedad}' en {tipo_obj}", acceso)
+        return TIPO_DESCONOCIDO
         
         # Analizar argumentos
         for arg in llamada.argumentos:

@@ -34,6 +34,12 @@ class InterpreteJade:
                 self.funciones[decl.nombre] = decl
             elif isinstance(decl, Importar):
                 self.ejecutar_importar(decl)
+            elif isinstance(decl, DeclaracionEnum):
+                # Guardamos la definición del enum en variables globales
+                # Usamos un dict simple para representar el Enum en runtime
+                # { 'VAL1': 'VAL1', 'VAL2': 'VAL2' }
+                enum_dict = {val: val for val in decl.valores}
+                self.variables[decl.nombre] = enum_dict
         
         # Ejecutar función main
         if 'main' in self.funciones:
@@ -254,6 +260,18 @@ class InterpreteJade:
         
         elif isinstance(expr, LlamadaMetodo):
             return self.ejecutar_metodo(expr)
+        
+        elif isinstance(expr, AccesoPropiedad):
+            # Evaluar el objeto (debería ser el dict del Enum)
+            objeto = self.evaluar_expresion(expr.objeto)
+            
+            # Verificar si es un dict (nuestra representación de Enum)
+            if isinstance(objeto, dict):
+                if expr.propiedad in objeto:
+                    return objeto[expr.propiedad]
+                raise AttributeError(f"Propiedad '{expr.propiedad}' no encontrada en objeto")
+            
+            raise TypeError(f"No se puede acceder a propiedad en objeto de tipo {type(objeto)}")
         
         return None
     

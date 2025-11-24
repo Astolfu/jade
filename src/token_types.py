@@ -43,6 +43,7 @@ class TokenType(Enum):
     LISTA = auto()           # lista
     MAPA = auto()            # mapa
     TUPLA = auto()           # tupla
+    ENUM = auto()            # enum
     
     # Palabras reservadas - Valores literales
     VERDADERO = auto()       # verdadero
@@ -167,6 +168,7 @@ PALABRAS_RESERVADAS = {
     'lista': TokenType.LISTA,
     'mapa': TokenType.MAPA,
     'tupla': TokenType.TUPLA,
+    'enum': TokenType.ENUM,
     
     # Valores literales
     'verdadero': TokenType.VERDADERO,
