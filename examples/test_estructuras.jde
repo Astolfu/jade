@@ -11,7 +11,7 @@ funcion main()
     mi_lista.agregar(40)
     mostrar("Nueva longitud: " + convertir_a_texto(mi_lista.longitud()))
     mostrar("Elemento en indice 3: " + convertir_a_texto(mi_lista[3]))
-    
+
     mostrar("Modificando indice 1...")
     mi_lista[1] = 25
     mostrar("Elemento en indice 1: " + convertir_a_texto(mi_lista[1]))
@@ -24,7 +24,7 @@ funcion main()
     mostrar("Eliminado: " + convertir_a_texto(eliminado))
     mostrar("Longitud final: " + convertir_a_texto(mi_lista.longitud()))
     mostrar("Elemento 0 ahora es: " + convertir_a_texto(mi_lista[0]))
-
+    
     // --- MAPAS ---
     mostrar("\n--- Mapas ---")
     variable mi_mapa = {"nombre": "Jade", "version": "0.1.0"}
