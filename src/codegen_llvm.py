@@ -66,6 +66,68 @@ class GeneradorLLVM:
         # char* jade_concatenar(const char* a, const char* b)
         fnty = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
         self.runtime_concatenar = ir.Function(self.module, fnty, name="jade_concatenar")
+        
+        # Listas
+        # JadeList* jade_lista_nueva()
+        fnty = ir.FunctionType(ir.IntType(8).as_pointer(), [])
+        self.runtime_lista_nueva = ir.Function(self.module, fnty, name="jade_lista_nueva")
+        
+        # void jade_lista_agregar(JadeList* lista, void* elemento)
+        fnty = ir.FunctionType(ir.VoidType(), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
+        self.runtime_lista_agregar = ir.Function(self.module, fnty, name="jade_lista_agregar")
+        
+        # void* jade_lista_obtener(JadeList* lista, int64_t indice)
+        fnty = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(8).as_pointer(), ir.IntType(64)])
+        self.runtime_lista_obtener = ir.Function(self.module, fnty, name="jade_lista_obtener")
+        
+        # void jade_lista_asignar(JadeList* lista, int64_t indice, void* valor)
+        fnty = ir.FunctionType(ir.VoidType(), [ir.IntType(8).as_pointer(), ir.IntType(64), ir.IntType(8).as_pointer()])
+        self.runtime_lista_asignar = ir.Function(self.module, fnty, name="jade_lista_asignar")
+        
+        # int64_t jade_lista_longitud(JadeList* lista)
+        fnty = ir.FunctionType(ir.IntType(64), [ir.IntType(8).as_pointer()])
+        self.runtime_lista_longitud = ir.Function(self.module, fnty, name="jade_lista_longitud")
+        
+        # void* jade_lista_eliminar(JadeList* lista, int64_t indice)
+        fnty = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(8).as_pointer(), ir.IntType(64)])
+        self.runtime_lista_eliminar = ir.Function(self.module, fnty, name="jade_lista_eliminar")
+        
+        # int jade_lista_contiene(JadeList* lista, void* elemento)
+        fnty = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
+        self.runtime_lista_contiene = ir.Function(self.module, fnty, name="jade_lista_contiene")
+        
+        # Mapas
+        # JadeMap* jade_mapa_nuevo()
+        fnty = ir.FunctionType(ir.IntType(8).as_pointer(), [])
+        self.runtime_mapa_nuevo = ir.Function(self.module, fnty, name="jade_mapa_nuevo")
+        
+        # void jade_mapa_asignar(JadeMap* mapa, void* clave, void* valor)
+        fnty = ir.FunctionType(ir.VoidType(), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
+        self.runtime_mapa_asignar = ir.Function(self.module, fnty, name="jade_mapa_asignar")
+        
+        # void* jade_mapa_obtener(JadeMap* mapa, void* clave)
+        fnty = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
+        self.runtime_mapa_obtener = ir.Function(self.module, fnty, name="jade_mapa_obtener")
+        
+        # void* jade_mapa_eliminar(JadeMap* mapa, void* clave)
+        fnty = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
+        self.runtime_mapa_eliminar = ir.Function(self.module, fnty, name="jade_mapa_eliminar")
+        
+        # int jade_mapa_contiene(JadeMap* mapa, void* clave)
+        fnty = ir.FunctionType(ir.IntType(32), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer()])
+        self.runtime_mapa_contiene = ir.Function(self.module, fnty, name="jade_mapa_contiene")
+        
+        # int64_t jade_mapa_longitud(JadeMap* mapa)
+        fnty = ir.FunctionType(ir.IntType(64), [ir.IntType(8).as_pointer()])
+        self.runtime_mapa_longitud = ir.Function(self.module, fnty, name="jade_mapa_longitud")
+        
+        # JadeList* jade_mapa_claves(JadeMap* mapa)
+        fnty = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(8).as_pointer()])
+        self.runtime_mapa_claves = ir.Function(self.module, fnty, name="jade_mapa_claves")
+        
+        # JadeList* jade_mapa_valores(JadeMap* mapa)
+        fnty = ir.FunctionType(ir.IntType(8).as_pointer(), [ir.IntType(8).as_pointer()])
+        self.runtime_mapa_valores = ir.Function(self.module, fnty, name="jade_mapa_valores")
     
     def obtener_tipo_llvm(self, tipo: Tipo) -> ir.Type:
         """Convierte un tipo Jade a tipo LLVM"""
@@ -179,7 +241,7 @@ class GeneradorLLVM:
             self.builder.ret_void()
         
         self.funcion_actual = None
-    
+
     def _generar_entry_point(self):
         """Genera función principal que inicializa runtime y llama a main"""
         # int _jade_main() que llama a jade main()
@@ -198,13 +260,15 @@ class GeneradorLLVM:
         
         # Retornar 0
         builder.ret(ir.Constant(ir.IntType(32), 0))
-    
+
     def _generar_statement(self, stmt: Statement):
         """Genera código para un statement"""
         if isinstance(stmt, DeclaracionVariable):
             self._generar_declaracion_variable(stmt)
         elif isinstance(stmt, Asignacion):
             self._generar_asignacion(stmt)
+        elif isinstance(stmt, AsignacionIndice):
+            self._generar_asignacion_indice(stmt)
         elif isinstance(stmt, Si):
             self._generar_si(stmt)
         elif isinstance(stmt, Mientras):
@@ -239,6 +303,35 @@ class GeneradorLLVM:
         alloca = self.variables.get(asig.nombre)
         if alloca:
             self.builder.store(valor, alloca)
+            
+    def _generar_asignacion_indice(self, stmt: AsignacionIndice):
+        """Genera código para asignación a índice: arr[i] = val"""
+        objeto = self._generar_expresion(stmt.objeto)
+        indice = self._generar_expresion(stmt.indice)
+        valor = self._generar_expresion(stmt.valor)
+        
+        val_ptr = self._cast_to_void_ptr(valor)
+        
+        # Usar info de tipos
+        tipo_obj = getattr(stmt.objeto, 'tipo', None)
+        es_mapa = False
+        
+        if tipo_obj and isinstance(tipo_obj, TipoMapa):
+            es_mapa = True
+        elif tipo_obj and isinstance(tipo_obj, TipoLista):
+            es_mapa = False
+        else:
+            # Fallback
+            if str(indice.type) == 'i8*':
+                es_mapa = True
+            
+        if es_mapa:
+            indice_ptr = self._cast_to_void_ptr(indice)
+            self.builder.call(self.runtime_mapa_asignar, [objeto, indice_ptr, val_ptr])
+        else:
+            if str(indice.type) != 'i64':
+                 indice = self.builder.zext(indice, ir.IntType(64))
+            self.builder.call(self.runtime_lista_asignar, [objeto, indice, val_ptr])
     
     def _generar_si(self, si: Si):
         """Genera código para condicional si/entonces/sino"""
@@ -380,9 +473,135 @@ class GeneradorLLVM:
         
         elif isinstance(expr, LlamadaFuncion):
             return self._generar_llamada(expr)
+            
+        elif isinstance(expr, AccesoIndice):
+            objeto = self._generar_expresion(expr.objeto)
+            indice = self._generar_expresion(expr.indice)
+            
+            # Usar info de tipos
+            tipo_obj = getattr(expr.objeto, 'tipo', None)
+            es_mapa = False
+            
+            if tipo_obj and isinstance(tipo_obj, TipoMapa):
+                es_mapa = True
+            elif tipo_obj and isinstance(tipo_obj, TipoLista):
+                es_mapa = False
+            else:
+                # Fallback
+                if str(indice.type) == 'i8*': 
+                    es_mapa = True
+            
+            if es_mapa:
+                indice_ptr = self._cast_to_void_ptr(indice)
+                val_ptr = self.builder.call(self.runtime_mapa_obtener, [objeto, indice_ptr])
+            else:
+                # Asumir lista
+                if str(indice.type) != 'i64':
+                     indice = self.builder.zext(indice, ir.IntType(64))
+                val_ptr = self.builder.call(self.runtime_lista_obtener, [objeto, indice])
+            
+            # Determinar tipo de retorno basado en análisis semántico
+            tipo_retorno = ir.IntType(64) # Default
+            tipo_expr = getattr(expr, 'tipo', None)
+            
+            if tipo_expr:
+                if tipo_expr.tipo_base == TipoDato.TEXTO:
+                    tipo_retorno = ir.IntType(8).as_pointer()
+                elif tipo_expr.tipo_base == TipoDato.FLOTANTE:
+                    tipo_retorno = ir.DoubleType()
+            
+            return self._cast_from_void_ptr(val_ptr, tipo_retorno)
         
+        elif isinstance(expr, LlamadaMetodo):
+            return self._generar_metodo(expr)
+        
+        elif isinstance(expr, LiteralLista):
+            # Crear nueva lista
+            lista = self.builder.call(self.runtime_lista_nueva, [])
+            
+            # Agregar elementos
+            for elem in expr.elementos:
+                val = self._generar_expresion(elem)
+                # Convertir valor a void* (i8*)
+                val_ptr = self._cast_to_void_ptr(val)
+                self.builder.call(self.runtime_lista_agregar, [lista, val_ptr])
+            
+            return lista
+            
+        elif isinstance(expr, LiteralMapa):
+            # Crear nuevo mapa
+            mapa = self.builder.call(self.runtime_mapa_nuevo, [])
+            
+            # Agregar pares
+            for k, v in expr.pares:
+                clave = self._generar_expresion(k)
+                valor = self._generar_expresion(v)
+                
+                clave_ptr = self._cast_to_void_ptr(clave)
+                valor_ptr = self._cast_to_void_ptr(valor)
+                
+                self.builder.call(self.runtime_mapa_asignar, [mapa, clave_ptr, valor_ptr])
+            
+            return mapa
+            
         else:
             return ir.Constant(ir.IntType(64), 0)
+    
+    def _generar_metodo(self, expr: LlamadaMetodo):
+        """Genera código para llamada a método"""
+        objeto = self._generar_expresion(expr.objeto)
+        args = [self._generar_expresion(arg) for arg in expr.argumentos]
+        
+        # Usar información de tipos adjunta por el analizador semántico
+        tipo_obj = getattr(expr.objeto, 'tipo', None)
+        
+        # Si no hay info de tipos (ej. si no se corrió el semántico), usar hacks o fallar
+        es_mapa = False
+        if tipo_obj and isinstance(tipo_obj, TipoMapa):
+            es_mapa = True
+        elif tipo_obj and isinstance(tipo_obj, TipoLista):
+            es_mapa = False
+        else:
+            # Fallback heurístico (hack)
+            if expr.nombre_metodo in ['claves', 'valores']:
+                es_mapa = True
+            elif len(args) > 0 and str(args[0].type) == 'i8*':
+                es_mapa = True
+        
+        if expr.nombre_metodo == 'agregar':
+            val_ptr = self._cast_to_void_ptr(args[0])
+            self.builder.call(self.runtime_lista_agregar, [objeto, val_ptr])
+            return ir.Constant(ir.IntType(64), 0)
+            
+        elif expr.nombre_metodo == 'claves':
+            return self.builder.call(self.runtime_mapa_claves, [objeto])
+            
+        elif expr.nombre_metodo == 'valores':
+            return self.builder.call(self.runtime_mapa_valores, [objeto])
+            
+        elif expr.nombre_metodo == 'longitud':
+            if es_mapa:
+                return self.builder.call(self.runtime_mapa_longitud, [objeto])
+            else:
+                return self.builder.call(self.runtime_lista_longitud, [objeto])
+            
+        elif expr.nombre_metodo == 'eliminar':
+            if es_mapa:
+                arg_ptr = self._cast_to_void_ptr(args[0])
+                return self.builder.call(self.runtime_mapa_eliminar, [objeto, arg_ptr])
+            else:
+                return self.builder.call(self.runtime_lista_eliminar, [objeto, args[0]])
+            
+        elif expr.nombre_metodo == 'contiene':
+            val_ptr = self._cast_to_void_ptr(args[0])
+            if es_mapa:
+                res = self.builder.call(self.runtime_mapa_contiene, [objeto, val_ptr])
+            else:
+                res = self.builder.call(self.runtime_lista_contiene, [objeto, val_ptr])
+            
+            return self.builder.zext(res, ir.IntType(64))
+        
+        return ir.Constant(ir.IntType(64), 0)
     
     def _generar_binaria(self, expr: ExpresionBinaria):
         """Genera código para expresión binaria"""
@@ -450,9 +669,38 @@ class GeneradorLLVM:
             return self.builder.call(self.runtime_mostrar, [arg])
         
         elif llamada.nombre == "convertir_a_texto":
-            arg = self._generar_expresion(llamada.argumentos[0])
-            # Asumir que es entero por ahora
-            return self.builder.call(self.runtime_conv_entero, [arg])
+            arg_expr = llamada.argumentos[0]
+            arg = self._generar_expresion(arg_expr)
+            
+            # Usar información semántica si está disponible
+            tipo_sem = getattr(arg_expr, 'tipo', None)
+            
+            if tipo_sem:
+                if tipo_sem.tipo_base == TipoDato.ENTERO:
+                    # Si viene como void* (de una lista/mapa), convertir a entero
+                    if str(arg.type) == 'i8*':
+                        arg = self.builder.ptrtoint(arg, ir.IntType(64))
+                    return self.builder.call(self.runtime_conv_entero, [arg])
+                    
+                elif tipo_sem.tipo_base == TipoDato.FLOTANTE:
+                    # Si viene como void*, convertir a double
+                    if str(arg.type) == 'i8*':
+                        # Asumimos que se guardó bitcasteado
+                        arg_int = self.builder.ptrtoint(arg, ir.IntType(64))
+                        arg = self.builder.bitcast(arg_int, ir.DoubleType())
+                    return self.builder.call(self.runtime_conv_flotante, [arg])
+                    
+                elif tipo_sem.tipo_base == TipoDato.TEXTO:
+                    # Ya es i8*, devolver tal cual
+                    return arg
+            
+            # Fallback: inferencia por tipo LLVM
+            if isinstance(arg.type, ir.PointerType) and arg.type.pointee == ir.IntType(8):
+                return arg
+            elif isinstance(arg.type, ir.DoubleType):
+                return self.builder.call(self.runtime_conv_flotante, [arg])
+            else:
+                return self.builder.call(self.runtime_conv_entero, [arg])
         
         # Función definida por usuario
         elif llamada.nombre in self.funciones:
@@ -461,6 +709,23 @@ class GeneradorLLVM:
             return self.builder.call(fn, args)
         
         return ir.Constant(ir.IntType(64), 0)
+
+
+    def _cast_to_void_ptr(self, val):
+        """Convierte un valor a void* (i8*)"""
+        if isinstance(val.type, ir.PointerType) and val.type.pointee == ir.IntType(8):
+            return val
+        if isinstance(val.type, ir.IntType):
+            return self.builder.inttoptr(val, ir.IntType(8).as_pointer())
+        return self.builder.bitcast(val, ir.IntType(8).as_pointer())
+
+    def _cast_from_void_ptr(self, val, target_type):
+        """Convierte de void* (i8*) al tipo destino"""
+        if target_type == ir.IntType(8).as_pointer():
+            return val
+        if isinstance(target_type, ir.IntType):
+            return self.builder.ptrtoint(val, target_type)
+        return self.builder.bitcast(val, target_type)
 
 
 def inicializar_llvm():

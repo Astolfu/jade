@@ -9,6 +9,7 @@ from parser import parsear_codigo
 from semantic_analyzer import AnalizadorSemantico
 from ast_nodes import *
 from type_system import *
+from token_types import TokenType
 
 
 class InterpreteJade:
@@ -72,6 +73,12 @@ class InterpreteJade:
         elif isinstance(stmt, Asignacion):
             valor = self.evaluar_expresion(stmt.valor)
             self.variables[stmt.nombre] = valor
+        
+        elif isinstance(stmt, AsignacionIndice):
+            objeto = self.evaluar_expresion(stmt.objeto)
+            indice = self.evaluar_expresion(stmt.indice)
+            valor = self.evaluar_expresion(stmt.valor)
+            objeto[indice] = valor
         
         elif isinstance(stmt, Si):
             condicion = self.evaluar_expresion(stmt.condicion)
@@ -181,13 +188,74 @@ class InterpreteJade:
         elif isinstance(expr, LiteralLista):
             return [self.evaluar_expresion(elem) for elem in expr.elementos]
         
+        elif isinstance(expr, LiteralMapa):
+            return {self.evaluar_expresion(k): self.evaluar_expresion(v) for k, v in expr.pares}
+        
         elif isinstance(expr, AccesoIndice):
             objeto = self.evaluar_expresion(expr.objeto)
             indice = self.evaluar_expresion(expr.indice)
             return objeto[indice]
         
+        elif isinstance(expr, LlamadaMetodo):
+            return self.ejecutar_metodo(expr)
+        
         return None
     
+    def ejecutar_metodo(self, llamada: LlamadaMetodo):
+        """Ejecuta llamada a método de objeto"""
+        objeto = self.evaluar_expresion(llamada.objeto)
+        args = [self.evaluar_expresion(arg) for arg in llamada.argumentos]
+        
+        # Métodos de listas
+        if isinstance(objeto, list):
+            if llamada.nombre_metodo == 'agregar':
+                if len(args) != 1:
+                    raise TypeError("agregar() requiere 1 argumento")
+                objeto.append(args[0])
+                return None
+            
+            elif llamada.nombre_metodo == 'longitud':
+                return len(objeto)
+            
+            elif llamada.nombre_metodo == 'eliminar':
+                if len(args) != 1:
+                    raise TypeError("eliminar() requiere 1 argumento")
+                return objeto.pop(args[0])
+            
+            elif llamada.nombre_metodo == 'contiene':
+                if len(args) != 1:
+                    raise TypeError("contiene() requiere 1 argumento")
+                return args[0] in objeto
+            
+            else:
+                raise AttributeError(f"Lista no tiene método '{llamada.nombre_metodo}'")
+        
+        # Métodos de mapas
+        elif isinstance(objeto, dict):
+            if llamada.nombre_metodo == 'claves':
+                return list(objeto.keys())
+            
+            elif llamada.nombre_metodo == 'valores':
+                return list(objeto.values())
+            
+            elif llamada.nombre_metodo == 'longitud':
+                return len(objeto)
+            
+            elif llamada.nombre_metodo == 'eliminar':
+                if len(args) != 1:
+                    raise TypeError("eliminar() requiere 1 argumento")
+                return objeto.pop(args[0], None)
+            
+            elif llamada.nombre_metodo == 'contiene':
+                if len(args) != 1:
+                    raise TypeError("contiene() requiere 1 argumento")
+                return args[0] in objeto
+            
+            else:
+                raise AttributeError(f"Mapa no tiene método '{llamada.nombre_metodo}'")
+        
+        raise TypeError(f"Objeto de tipo {type(objeto)} no soporta métodos")
+
     def ejecutar_llamada(self, llamada: LlamadaFuncion):
         """Ejecuta llamada a función"""
         # Funciones built-in

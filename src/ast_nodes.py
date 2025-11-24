@@ -112,6 +112,19 @@ class LlamadaFuncion(Expresion):
         return f"LlamadaFuncion({self.nombre}({args}))"
 
 
+class LlamadaMetodo(Expresion):
+    """Llamada a método de objeto (obj.metodo(args))"""
+    def __init__(self, objeto: Expresion, nombre_metodo: str, argumentos: List[Expresion], token: Token):
+        self.objeto = objeto
+        self.nombre_metodo = nombre_metodo
+        self.argumentos = argumentos
+        self.token = token
+    
+    def __repr__(self):
+        args = ', '.join(str(arg) for arg in self.argumentos)
+        return f"LlamadaMetodo({self.objeto}.{self.nombre_metodo}({args}))"
+
+
 class AccesoIndice(Expresion):
     """Acceso a elemento de lista/mapa por índice (arr[0])"""
     def __init__(self, objeto: Expresion, indice: Expresion, token: Token):

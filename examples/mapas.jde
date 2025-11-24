@@ -1,0 +1,32 @@
+// Ejemplo de mapas en Jade
+
+funcion main()
+    // Crear un mapa
+    variable edades = {"Ana": 25, "Juan": 30, "Maria": 28}
+    
+    mostrar("Mapa creado")
+    mostrar("Edad de Ana: " + convertir_a_texto(edades["Ana"]))
+    
+    // Modificar valor
+    edades["Ana"] = 26
+    mostrar("Nueva edad de Ana: " + convertir_a_texto(edades["Ana"]))
+    
+    // Agregar nuevo par
+    edades["Pedro"] = 35
+    mostrar("Edad de Pedro: " + convertir_a_texto(edades["Pedro"]))
+    
+    // Usar métodos
+    mostrar("Longitud del mapa: " + convertir_a_texto(edades.longitud()))
+    
+    si edades.contiene("Juan") entonces
+        mostrar("Juan está en el mapa")
+    fin
+    
+    variable claves = edades.claves()
+    mostrar("Claves obtenidas (lista)")
+    
+    edades.eliminar("Juan")
+    si no edades.contiene("Juan") entonces
+        mostrar("Juan fue eliminado")
+    fin
+fin

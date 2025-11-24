@@ -425,12 +425,29 @@ class Parser:
                     self.error("Solo se puede llamar a funciones con nombre")
             
             elif self.verificar(TokenType.CORCHETE_IZQ):
-                # Acceso a ├¡ndice
+                # Acceso a índice
                 token = self.token_actual
                 self.avanzar()
                 indice = self.expresion()
                 self.esperar(TokenType.CORCHETE_DER)
                 expr = AccesoIndice(expr, indice, token)
+            
+            elif self.verificar(TokenType.PUNTO):
+                # Llamada a método
+                self.avanzar()
+                token_nombre = self.esperar(TokenType.IDENTIFICADOR)
+                nombre_metodo = token_nombre.valor
+                
+                self.esperar(TokenType.PARENTESIS_IZQ)
+                argumentos = []
+                if not self.verificar(TokenType.PARENTESIS_DER):
+                    argumentos.append(self.expresion())
+                    while self.verificar(TokenType.COMA):
+                        self.avanzar()
+                        argumentos.append(self.expresion())
+                self.esperar(TokenType.PARENTESIS_DER)
+                
+                expr = LlamadaMetodo(expr, nombre_metodo, argumentos, token_nombre)
             
             else:
                 break

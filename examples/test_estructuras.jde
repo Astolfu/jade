@@ -1,0 +1,57 @@
+funcion main()
+    mostrar("=== TEST DE ESTRUCTURAS ===")
+
+    // --- LISTAS ---
+    mostrar("\n--- Listas ---")
+    variable mi_lista = [10, 20, 30]
+    mostrar("Lista creada")
+    mostrar("Longitud: " + convertir_a_texto(mi_lista.longitud()))
+    
+    mostrar("Agregando 40...")
+    mi_lista.agregar(40)
+    mostrar("Nueva longitud: " + convertir_a_texto(mi_lista.longitud()))
+    mostrar("Elemento en indice 3: " + convertir_a_texto(mi_lista[3]))
+    
+    mostrar("Modificando indice 1...")
+    mi_lista[1] = 25
+    mostrar("Elemento en indice 1: " + convertir_a_texto(mi_lista[1]))
+    
+    mostrar("Contiene 25? " + convertir_a_texto(mi_lista.contiene(25)))
+    mostrar("Contiene 99? " + convertir_a_texto(mi_lista.contiene(99)))
+    
+    mostrar("Eliminando indice 0...")
+    variable eliminado = mi_lista.eliminar(0)
+    mostrar("Eliminado: " + convertir_a_texto(eliminado))
+    mostrar("Longitud final: " + convertir_a_texto(mi_lista.longitud()))
+    mostrar("Elemento 0 ahora es: " + convertir_a_texto(mi_lista[0]))
+
+    // --- MAPAS ---
+    mostrar("\n--- Mapas ---")
+    variable mi_mapa = {"nombre": "Jade", "version": "0.1.0"}
+    mostrar("Mapa inicial creado")
+    mostrar("Longitud: " + convertir_a_texto(mi_mapa.longitud()))
+    
+    mostrar("Accediendo a clave 'nombre': " + convertir_a_texto(mi_mapa["nombre"]))
+    
+    mostrar("Agregando clave 'autor'...")
+    mi_mapa["autor"] = "Moises"
+    mostrar("Autor: " + convertir_a_texto(mi_mapa["autor"]))
+    mostrar("Longitud nueva: " + convertir_a_texto(mi_mapa.longitud()))
+    
+    mostrar("Contiene 'version'? " + convertir_a_texto(mi_mapa.contiene("version")))
+    mostrar("Contiene 'fecha'? " + convertir_a_texto(mi_mapa.contiene("fecha")))
+    
+    mostrar("Claves del mapa:")
+    variable claves = mi_mapa.claves()
+    // Iterar claves (simulado por ahora imprimiendo indices de la lista de claves)
+    mostrar("- " + convertir_a_texto(claves[0]))
+    mostrar("- " + convertir_a_texto(claves[1]))
+    mostrar("- " + convertir_a_texto(claves[2]))
+    
+    mostrar("Eliminando 'version'...")
+    variable val_elim = mi_mapa.eliminar("version")
+    mostrar("Valor eliminado: " + convertir_a_texto(val_elim))
+    mostrar("Contiene 'version' ahora? " + convertir_a_texto(mi_mapa.contiene("version")))
+    
+    mostrar("\n=== TEST COMPLETADO ===")
+fin

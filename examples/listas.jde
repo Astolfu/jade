@@ -12,4 +12,12 @@ funcion main()
     // Modificar elemento
     numeros[0] = 10
     mostrar("Modificado primer elemento: " + convertir_a_texto(numeros[0]))
+    
+    // Usar métodos de lista
+    numeros.agregar(6)
+    mostrar("Elemento agregado. Longitud: " + convertir_a_texto(numeros.longitud()))
+    
+    variable eliminado = numeros.eliminar(0)
+    mostrar("Elemento eliminado: " + convertir_a_texto(eliminado))
+    mostrar("Nueva longitud: " + convertir_a_texto(numeros.longitud()))
 fin

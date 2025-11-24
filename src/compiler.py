@@ -96,6 +96,15 @@ class Compilador:
             # Inicializar LLVM
             inicializar_llvm()
             
+            # Asegurar que el análisis semántico se ejecutó (para anotar tipos)
+            # Si ya se ejecutó en fase_semantica, self.ast ya tiene tipos?
+            # No necesariamente, porque fase_semantica podría no haberse llamado si solo pedimos codegen.
+            # Pero compilar() llama a todas en orden.
+            # Sin embargo, para estar seguros y si se usa fase_codegen aisladamente:
+            # Re-ejecutar análisis semántico sobre el AST actual para garantizar anotaciones
+            analizador = AnalizadorSemantico()
+            analizador.analizar(self.ast)
+            
             # Generar LLVM IR
             generador = GeneradorLLVM()
             llvm_ir = generador.generar(self.ast)

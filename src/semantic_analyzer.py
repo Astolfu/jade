@@ -262,39 +262,159 @@ class AnalizadorSemantico:
     
     def analizar_expresion(self, expr: Expresion) -> Tipo:
         """Analiza una expresión y retorna su tipo"""
-        if isinstance(expr, LiteralEntero):
-            return TIPO_ENTERO
-        elif isinstance(expr, LiteralFlotante):
-            return TIPO_FLOTANTE
-        elif isinstance(expr, LiteralTexto):
-            return TIPO_TEXTO
-        elif isinstance(expr, LiteralBooleano):
-            return TIPO_BOOLEANO
-        elif isinstance(expr, LiteralNulo):
-            return TIPO_NULO
-        elif isinstance(expr, Identificador):
-            tipo = self.scope_actual.buscar(expr.nombre)
-            if tipo is None:
-                self.error(f"Variable '{expr.nombre}' no está definida", expr)
-                return TIPO_DESCONOCIDO
-            return tipo
-        elif isinstance(expr, ExpresionBinaria):
-            return self.analizar_expresion_binaria(expr)
+        tipo_resultado = TIPO_DESCONOCIDO
+        
+        if isinstance(expr, ExpresionBinaria):
+            tipo_resultado = self.analizar_expresion_binaria(expr)
         elif isinstance(expr, ExpresionUnaria):
-            return self.analizar_expresion_unaria(expr)
+            tipo_resultado = self.analizar_expresion_unaria(expr)
+        elif isinstance(expr, LiteralEntero):
+            tipo_resultado = TIPO_ENTERO
+        elif isinstance(expr, LiteralFlotante):
+            tipo_resultado = TIPO_FLOTANTE
+        elif isinstance(expr, LiteralBooleano):
+            tipo_resultado = TIPO_BOOLEANO
+        elif isinstance(expr, LiteralTexto):
+            tipo_resultado = TIPO_TEXTO
+        elif isinstance(expr, LiteralNulo):
+            tipo_resultado = TIPO_NULO
+        elif isinstance(expr, Identificador):
+            var_info = self.scope_actual.buscar(expr.nombre)
+            if var_info:
+                tipo_resultado = var_info
+            else:
+                self.error(f"Variable no definida: '{expr.nombre}'", expr)
+                tipo_resultado = TIPO_DESCONOCIDO
         elif isinstance(expr, LlamadaFuncion):
-            return self.analizar_llamada(expr)
+            tipo_resultado = self.analizar_llamada(expr)
         elif isinstance(expr, LiteralLista):
-            # Por ahora, simplemente analizar elementos
+            tipo_elemento = None
             for elem in expr.elementos:
-                self.analizar_expresion(elem)
-            return Tipo(TipoDato.LISTA)
+                tipo_actual = self.analizar_expresion(elem)
+                if tipo_elemento is None:
+                    tipo_elemento = tipo_actual
+                elif tipo_actual != tipo_elemento:
+                    # Por ahora permitimos listas heterogéneas como lista[desconocido]
+                    tipo_elemento = TIPO_DESCONOCIDO
+            
+            if tipo_elemento is None:
+                tipo_resultado = TipoLista(TIPO_DESCONOCIDO) # Lista vacía
+            else:
+                tipo_resultado = TipoLista(tipo_elemento)
+            
+        elif isinstance(expr, LiteralMapa):
+            tipo_clave = None
+            tipo_valor = None
+            
+            for k, v in expr.pares:
+                t_k = self.analizar_expresion(k)
+                t_v = self.analizar_expresion(v)
+                
+                if tipo_clave is None: tipo_clave = t_k
+                elif t_k != tipo_clave: tipo_clave = TIPO_DESCONOCIDO
+                
+                if tipo_valor is None: tipo_valor = t_v
+                elif t_v != tipo_valor: tipo_valor = TIPO_DESCONOCIDO
+            
+            if tipo_clave is None:
+                tipo_resultado = TipoMapa(TIPO_DESCONOCIDO, TIPO_DESCONOCIDO)
+            else:
+                tipo_resultado = TipoMapa(tipo_clave, tipo_valor)
+
         elif isinstance(expr, AccesoIndice):
-            self.analizar_expresion(expr.objeto)
-            self.analizar_expresion(expr.indice)
-            return TIPO_DESCONOCIDO  # Depende del tipo del contenedor
+            tipo_obj = self.analizar_expresion(expr.objeto)
+            tipo_indice = self.analizar_expresion(expr.indice)
+            
+            if isinstance(tipo_obj, TipoLista):
+                if tipo_indice.tipo_base != TipoDato.ENTERO:
+                    self.error(f"Índice de lista debe ser entero, no {tipo_indice}", expr)
+                tipo_resultado = tipo_obj.tipo_elemento
+            
+            elif isinstance(tipo_obj, TipoMapa):
+                if tipo_indice != tipo_obj.tipo_clave and tipo_obj.tipo_clave.tipo_base != TipoDato.DESCONOCIDO:
+                     # Permitir si es compatible (ej. int -> float? no para claves)
+                     if tipo_indice.tipo_base != TipoDato.DESCONOCIDO:
+                        self.error(f"Clave de mapa debe ser {tipo_obj.tipo_clave}, no {tipo_indice}", expr)
+                tipo_resultado = tipo_obj.tipo_valor
+            
+            else:
+                tipo_resultado = TIPO_DESCONOCIDO
+            
+        elif isinstance(expr, LlamadaMetodo):
+            tipo_resultado = self.analizar_metodo(expr)
+            
         else:
-            return TIPO_DESCONOCIDO
+            tipo_resultado = TIPO_DESCONOCIDO
+            
+        # Adjuntar tipo al nodo AST para uso posterior (codegen)
+        expr.tipo = tipo_resultado
+        return tipo_resultado
+
+    def analizar_metodo(self, llamada: LlamadaMetodo) -> Tipo:
+        """Analiza llamada a método"""
+        tipo_obj = self.analizar_expresion(llamada.objeto)
+        
+        # Analizar argumentos
+        for arg in llamada.argumentos:
+            self.analizar_expresion(arg)
+        
+        if tipo_obj.tipo_base == TipoDato.LISTA:
+            if llamada.nombre_metodo == 'agregar':
+                if len(llamada.argumentos) != 1:
+                    self.error("Método 'agregar' requiere 1 argumento", llamada)
+                return TIPO_NULO
+            
+            elif llamada.nombre_metodo == 'longitud':
+                if len(llamada.argumentos) != 0:
+                    self.error("Método 'longitud' no acepta argumentos", llamada)
+                return TIPO_ENTERO
+            
+            elif llamada.nombre_metodo == 'eliminar':
+                if len(llamada.argumentos) != 1:
+                    self.error("Método 'eliminar' requiere 1 argumento", llamada)
+                return tipo_obj.tipo_elemento if isinstance(tipo_obj, TipoLista) else TIPO_DESCONOCIDO
+            
+            elif llamada.nombre_metodo == 'contiene':
+                if len(llamada.argumentos) != 1:
+                    self.error("Método 'contiene' requiere 1 argumento", llamada)
+                return TIPO_BOOLEANO
+            
+            else:
+                self.error(f"Lista no tiene método '{llamada.nombre_metodo}'", llamada)
+                return TIPO_DESCONOCIDO
+        
+        elif tipo_obj.tipo_base == TipoDato.MAPA:
+            if llamada.nombre_metodo == 'claves':
+                if len(llamada.argumentos) != 0:
+                    self.error("Método 'claves' no acepta argumentos", llamada)
+                return TipoLista(tipo_obj.tipo_clave if isinstance(tipo_obj, TipoMapa) else TIPO_DESCONOCIDO)
+            
+            elif llamada.nombre_metodo == 'valores':
+                if len(llamada.argumentos) != 0:
+                    self.error("Método 'valores' no acepta argumentos", llamada)
+                return TipoLista(tipo_obj.tipo_valor if isinstance(tipo_obj, TipoMapa) else TIPO_DESCONOCIDO)
+            
+            elif llamada.nombre_metodo == 'longitud':
+                if len(llamada.argumentos) != 0:
+                    self.error("Método 'longitud' no acepta argumentos", llamada)
+                return TIPO_ENTERO
+            
+            elif llamada.nombre_metodo == 'eliminar':
+                if len(llamada.argumentos) != 1:
+                    self.error("Método 'eliminar' requiere 1 argumento", llamada)
+                return tipo_obj.tipo_valor if isinstance(tipo_obj, TipoMapa) else TIPO_DESCONOCIDO
+            
+            elif llamada.nombre_metodo == 'contiene':
+                if len(llamada.argumentos) != 1:
+                    self.error("Método 'contiene' requiere 1 argumento", llamada)
+                return TIPO_BOOLEANO
+            
+            else:
+                self.error(f"Mapa no tiene método '{llamada.nombre_metodo}'", llamada)
+                return TIPO_DESCONOCIDO
+        
+        self.error(f"Tipo {tipo_obj} no soporta métodos", llamada)
+        return TIPO_DESCONOCIDO
     
     def analizar_expresion_binaria(self, expr: ExpresionBinaria) -> Tipo:
         """Analiza expresión binaria"""
