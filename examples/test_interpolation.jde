@@ -1,0 +1,28 @@
+// Test de string interpolation con función f()
+
+funcion main()
+    variable nombre = "Juan"
+    variable edad = 30
+    variable ciudad = "Madrid"
+    
+    // Test básico
+    mostrar(f("Hola {}", nombre))
+    
+    // Test múltiples valores
+    mostrar(f("Hola {}, tienes {} años", nombre, edad))
+    
+    // Test con expresiones
+    variable x = 10
+    variable y = 5
+    mostrar(f("La suma de {} y {} es {}", x, y, x + y))
+    
+    // Test con más texto
+    mostrar(f("{} vive en {} y tiene {} años", nombre, ciudad, edad))
+    
+    // Test anidado con convertir_a_texto
+    variable doble = edad * 2
+    mostrar(f("El doble de {} es {}", edad, doble))
+    
+    // Test vacío
+    mostrar(f("Sin interpolación"))
+fin

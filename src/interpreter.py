@@ -294,6 +294,16 @@ class InterpreteJade:
             b = self.evaluar_expresion(llamada.argumentos[1])
             return min(a, b)
         
+        # String formatting/interpolation  
+        elif llamada.nombre == 'f':
+            if len(llamada.argumentos) < 1:
+                raise TypeError("f() requiere al menos 1 argumento")
+            template = self.evaluar_expresion(llamada.argumentos[0])
+            valores = [self.evaluar_expresion(arg) for arg in llamada.argumentos[1:]]
+            resultado = template
+            for valor in valores:
+                resultado = resultado.replace('{}', str(valor), 1)
+            return resultado
         # Funciones definidas por usuario
         else:
             args = [self.evaluar_expresion(arg) for arg in llamada.argumentos]
