@@ -1,4 +1,4 @@
-funcion factorial(entero n)
+funcion factorial(n)
     variable resultado = 1
     para i desde 2 hasta n + 1 hacer
         resultado = resultado * i

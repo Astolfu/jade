@@ -1,0 +1,35 @@
+// Test de String Features
+
+funcion main()
+    mostrar("Probando String Features...")
+    
+    // 1. Métodos de String
+    variable mi_texto = "  Hola Mundo Jade  "
+    
+    mostrar(f("Original: '{}'", mi_texto))
+    mostrar(f("Longitud: {}", mi_texto.longitud()))
+    mostrar(f("Mayúsculas: '{}'", mi_texto.mayusculas()))
+    mostrar(f("Minúsculas: '{}'", mi_texto.minusculas()))
+    mostrar(f("Recortado: '{}'", mi_texto.recortar()))
+    
+    variable limpio = mi_texto.recortar()
+    mostrar(f("Contiene 'Mundo': {}", limpio.contiene("Mundo")))
+    mostrar(f("Contiene 'Python': {}", limpio.contiene("Python")))
+    
+    variable reemplazado = limpio.reemplazar("Jade", "World")
+    mostrar(f("Reemplazado: '{}'", reemplazado))
+    
+    variable mi_lista = "a,b,c".dividir(",")
+    mostrar(f("Dividido: {}", mi_lista))
+    
+    // 2. Cadenas Multilínea
+    variable multi = """
+    Esta es una cadena
+    que ocupa múltiples
+    líneas.
+    """
+    mostrar("Multilínea:")
+    mostrar(multi)
+    
+    mostrar("Fin de pruebas")
+fin

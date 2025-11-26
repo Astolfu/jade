@@ -327,8 +327,40 @@ class InterpreteJade:
             
             else:
                 raise AttributeError(f"Mapa no tiene método '{llamada.nombre_metodo}'")
+
+        # Métodos de texto
+        elif isinstance(objeto, str):
+            if llamada.nombre_metodo == 'longitud':
+                return len(objeto)
+            
+            elif llamada.nombre_metodo == 'mayusculas':
+                return objeto.upper()
+            
+            elif llamada.nombre_metodo == 'minusculas':
+                return objeto.lower()
+            
+            elif llamada.nombre_metodo == 'recortar':
+                return objeto.strip()
+            
+            elif llamada.nombre_metodo == 'contiene':
+                if len(args) != 1:
+                    raise TypeError("contiene() requiere 1 argumento")
+                return args[0] in objeto
+            
+            elif llamada.nombre_metodo == 'reemplazar':
+                if len(args) != 2:
+                    raise TypeError("reemplazar() requiere 2 argumentos")
+                return objeto.replace(args[0], args[1])
+            
+            elif llamada.nombre_metodo == 'dividir':
+                if len(args) != 1:
+                    raise TypeError("dividir() requiere 1 argumento")
+                return objeto.split(args[0])
+            
+            else:
+                raise AttributeError(f"Texto no tiene método '{llamada.nombre_metodo}'")
         
-        raise TypeError(f"Objeto de tipo {type(objeto)} no soporta métodos")
+        raise TypeError(f"Objeto de tipo {type(objeto)} no tiene métodos")
 
     def ejecutar_llamada(self, llamada: LlamadaFuncion):
         """Ejecuta llamada a función"""

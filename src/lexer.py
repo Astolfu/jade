@@ -134,6 +134,43 @@ class Lexer:
         
         return Token(TokenType.LITERAL_TEXTO, texto, linea_inicio, columna_inicio)
     
+    def leer_texto_multilinea(self):
+        """Lee una cadena de texto multilínea con triple comilla"""
+        linea_inicio = self.linea
+        columna_inicio = self.columna
+        
+        # Saltar las 3 comillas iniciales
+        self.avanzar()
+        self.avanzar()
+        self.avanzar()
+        
+        texto = ''
+        while self.caracter_actual:
+            # Verificar cierre
+            if (self.caracter_actual == '"' and 
+                self.ver_siguiente() == '"' and 
+                self.ver_siguiente(2) == '"'):
+                break
+            
+            texto += self.caracter_actual
+            
+            # Actualizar contadores de línea si es necesario
+            if self.caracter_actual == '\n':
+                self.linea += 1
+                self.columna = 0
+            
+            self.avanzar()
+        
+        if not self.caracter_actual:
+            self.error("Cadena multilínea sin cerrar (falta \"\"\")")
+        
+        # Saltar las 3 comillas finales
+        self.avanzar()
+        self.avanzar()
+        self.avanzar()
+        
+        return Token(TokenType.LITERAL_TEXTO, texto, linea_inicio, columna_inicio)
+    
     def leer_caracter(self):
         """Lee un carácter entre comillas simples"""
         linea_inicio = self.linea
@@ -216,6 +253,9 @@ class Lexer:
             
             # Cadenas de texto
             if self.caracter_actual == '"':
+                # Verificar si es triple comilla
+                if self.ver_siguiente() == '"' and self.ver_siguiente(2) == '"':
+                    return self.leer_texto_multilinea()
                 return self.leer_texto('"')
             
             # Caracteres

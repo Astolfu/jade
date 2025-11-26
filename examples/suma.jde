@@ -1,10 +1,10 @@
-funcion suma(entero a, entero b)
+funcion suma(a, b)
     retornar a + b
 fin
 
 funcion main()
-    entero resultado = suma(15, 27)
-    entero mult = 8 * 12
+    variable resultado = suma(15, 27)
+    variable mult = 8 * 12
     
     mostrar("=== Calculadora Simple ===")
     mostrar("15 + 27 = " + convertir_a_texto(resultado))
